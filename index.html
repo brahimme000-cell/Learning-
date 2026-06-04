@@ -12,7 +12,10 @@
 <div id="app-container">
     <main id="home-screen" class="screen active">
         <div class="top-bar">
-            <div class="streak-badge"><i class="fa-solid fa-fire"></i><span>1</span></div>
+            <div class="streak-badge" id="streak-container" title="أيام النشاط">
+                <i class="fa-solid fa-fire" id="streak-icon"></i> 
+                <span id="streak-count">0</span>
+            </div>
             <button id="quick-prefs-btn" class="top-select-btn"><span id="quick-prefs-display">🇺🇸 English • متوسط</span><i class="fa-solid fa-chevron-down"></i></button>
         </div>
         <div class="center-content">
@@ -29,12 +32,21 @@
     </main>
 
     <main id="voice-screen" class="screen voice-mode-screen">
-        <div class="voice-header"><span>محادثة صوتية مباشرة</span></div>
+        <div class="voice-header" style="display: flex; justify-content: center; align-items: center; position: relative;">
+            <span>محادثة صوتية مباشرة</span>
+            <button id="toggle-text-btn" class="icon-btn" style="position: absolute; right: 20px;"><i class="fa-solid fa-eye"></i></button>
+        </div>
         <div class="voice-center">
+            
+            <div id="audio-waves" class="audio-waves hidden">
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            </div>
+
             <div class="custom-book-logo voice-large-logo" id="voice-logo">
                 <i class="fa-solid fa-sparkles logo-sparkle"></i>
                 <div class="book-pages"><div class="page-left">A</div><div class="page-right">أ</div></div>
             </div>
+            
             <h3 id="voice-status-text">جاري الاستماع...</h3>
             <p id="voice-live-transcript" class="transcript-text">...</p>
         </div>
@@ -97,5 +109,5 @@
 
 <script src="app.js"></script>
 </body>
-    </html>
-    
+                         </html>
+                         
