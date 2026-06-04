@@ -2,6 +2,10 @@ const navItems = document.querySelectorAll('.nav-item');
 const screens = document.querySelectorAll('.screen');
 const bottomNav = document.querySelector('.bottom-nav');
 
+// إخفاء اللوجو القديم من شاشة الصوت بالقوة لضمان ظهور الترددات فقط
+const voiceLogo = document.getElementById('voice-logo');
+if (voiceLogo) voiceLogo.style.display = 'none';
+
 function switchScreen(targetId) {
     if (targetId === 'voice-screen') bottomNav.classList.add('hidden');
     else bottomNav.classList.remove('hidden');
@@ -285,22 +289,22 @@ recognition.onresult = function(event) {
 
 recognition.onerror = function(event) { if (event.error === 'no-speech' && isVoiceModeActive) startListening(); };
 
+// برمجة ذكية لبدء الحوار: الذكاء الاصطناعي سيبدأ الكلام مباشرة في صلب الموضوع
 function startVoiceSession() {
     if (!currentConfig.apiKey) { alert("الرجاء إدخال Gemini API Key في الإعدادات!"); switchScreen('settings-screen'); return; }
     isVoiceModeActive = true; switchScreen('voice-screen'); 
     
-    const greetings = {
-        'English': "Hello! Let's start the conversation.",
-        'French': "Bonjour ! Commençons la conversation.",
-        'Spanish': "¡Hola! Empecemos la conversación.",
-        'German': "Hallo! Lass uns anfangen.",
-        'Arabic': "أهلاً بك! دعنا نبدأ المحادثة.",
-        'Italian': "Ciao! Iniziamo la conversazione.",
-        'Portuguese': "Olá! Vamos começar.",
-        'Turkish': "Merhaba! Hadi başlayalım."
-    };
-    let initialGreeting = greetings[currentConfig.chatLanguage] || greetings['English'];
-    speakText(initialGreeting);
+    document.getElementById('voice-status-text').textContent = "يتم تحضير السيناريو...";
+    
+    let hiddenPrompt = "";
+    if (currentConfig.userRole && currentConfig.aiRole && currentConfig.scenarioPlace) {
+        hiddenPrompt = `[SYSTEM INSTRUCTION]: The simulation starts NOW. We are at [${currentConfig.scenarioPlace}]. You are playing the role of [${currentConfig.aiRole}]. The user, who is [${currentConfig.userRole}], has just appeared. YOU MUST SPEAK FIRST. Give your opening line in character to start the interaction. Do not break character.`;
+    } else {
+        hiddenPrompt = `[SYSTEM INSTRUCTION]: Start the conversation. Greet the user naturally in ${currentConfig.chatLanguage} and ask an interesting question to get them talking.`;
+    }
+    
+    // إرسال الطلب المخفي ليقوم الذكاء الاصطناعي ببدء المحادثة
+    fetchAIResponse(hiddenPrompt, true);
 }
 
 if (document.getElementById('end-voice-call-btn')) {
@@ -310,6 +314,7 @@ if (document.getElementById('end-voice-call-btn')) {
     });
 }
 
+// التعديل الجذري للقضاء على جملة (تعبير صحيح) وفرض الشخصية الواقعية
 function getSystemPrompt() {
     let levelInstructions = "";
     switch(currentConfig.userLevel) {
@@ -328,7 +333,6 @@ function getSystemPrompt() {
         styleInstruction = "Act as a VERY POLITE, encouraging, and friendly language partner. Be extremely supportive.";
     }
 
-    // زرع "الحياة البشرية" في السيناريوهات
     let roleplaySetup = "";
     if (currentConfig.userRole && currentConfig.aiRole && currentConfig.scenarioPlace) {
         roleplaySetup = `\nCRITICAL ROLEPLAY INSTRUCTIONS:
@@ -339,7 +343,7 @@ function getSystemPrompt() {
         - Show emotions, use natural filler words (like hmm, well, ah), react to the user's tone, and keep the conversation extremely lifelike and engaging.
         - Never break character. Never mention you are an AI or language model.`;
     } else {
-        roleplaySetup = `\nSCENARIO: General conversation.`;
+        roleplaySetup = `\nSCENARIO: General natural conversation.`;
     }
 
     let basePrompt = `You are a professional language expert and exceptional improvisational actor for ${currentConfig.chatLanguage}.
@@ -349,11 +353,11 @@ function getSystemPrompt() {
     YOUR PERSONALITY: ${styleInstruction}
     ${roleplaySetup}
 
-    STRICT OUTPUT FORMAT:
-    - Line 1: Your conversational response in character. Keep it to 1-2 sentences max. Speak entirely in ${currentConfig.chatLanguage}.
-    - Line 2 (MUST START WITH A NEWLINE): "💡 الملاحظة: " (In clear Arabic).
-      * CRITICAL: ONLY make a correction if they made an actual grammar or vocabulary mistake.
-      * If the phrase was correct, just write "تعبير صحيح، تابع!" and nothing else.`;
+    STRICT OUTPUT FORMAT RULES:
+    1. Your conversational response MUST be entirely in ${currentConfig.chatLanguage}. Keep it natural and short (1-3 sentences).
+    2. ERROR CORRECTION PROTOCOL: 
+       - IF the user makes a clear grammar or vocabulary mistake: You MUST add a new line at the very end starting exactly with "💡 الملاحظة: " in Arabic explaining the mistake.
+       - IF the user's sentence is perfectly correct: Output ONLY your conversational response. DO NOT add any note. DO NOT write words like "تعبير صحيح" or "جيد".`;
     
     return basePrompt;
 }
@@ -361,9 +365,14 @@ function getSystemPrompt() {
 async function fetchAIResponse(userText, isVoiceCall = false) {
     if (!currentConfig.apiKey) return;
     
-    // منع تسجيل الكلام الصوتي في الشات الكتابي نهائياً
-    if (!isVoiceCall) addChatMessage(userText, true); 
-    else document.getElementById('voice-status-text').textContent = "يفكر...";
+    if (!isVoiceCall) {
+        // حماية: إذا لم يكن أمراً مخفياً من النظام، أضفه للشات النصي
+        if (!userText.includes("[SYSTEM INSTRUCTION]")) {
+            addChatMessage(userText, true); 
+        }
+    } else {
+        document.getElementById('voice-status-text').textContent = "الذكاء الاصطناعي يفكر...";
+    }
 
     let modelsToTry = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-flash-latest"];
     let success = false;
@@ -391,7 +400,6 @@ async function fetchAIResponse(userText, isVoiceCall = false) {
     }
 
     if (success) {
-        // الفصل الجذري بين المحادثة الصوتية والكتابية
         if (isVoiceCall) {
             speakText(replyText); 
         } else {
@@ -411,18 +419,4 @@ const chatBox = document.getElementById('chat-box');
 const userInput = document.getElementById('user-input');
 if (document.getElementById('send-btn')) {
     document.getElementById('send-btn').addEventListener('click', () => {
-        const text = userInput.value.trim();
-        if (text) { 
-            if (!currentConfig.apiKey) { alert("الرجاء إدخال Gemini API Key!"); return; }
-            userInput.value = ''; fetchAIResponse(text, false); 
-        }
-    });
-}
-
-function addChatMessage(text, isUser) {
-    const div = document.createElement('div');
-    div.className = `message ${isUser ? 'user-msg' : 'bot-msg'}`;
-    div.innerHTML = `<div class="msg-content">${text}</div>`;
-    if (chatBox) { chatBox.appendChild(div); chatBox.scrollTop = chatBox.scrollHeight; }
-}
-    
+        const text = userIn
