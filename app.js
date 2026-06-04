@@ -2,10 +2,6 @@ const navItems = document.querySelectorAll('.nav-item');
 const screens = document.querySelectorAll('.screen');
 const bottomNav = document.querySelector('.bottom-nav');
 
-// إخفاء اللوجو القديم من شاشة الصوت بالقوة لضمان ظهور الترددات فقط
-const voiceLogo = document.getElementById('voice-logo');
-if (voiceLogo) voiceLogo.style.display = 'none';
-
 function switchScreen(targetId) {
     if (targetId === 'voice-screen') bottomNav.classList.add('hidden');
     else bottomNav.classList.remove('hidden');
@@ -14,10 +10,14 @@ function switchScreen(targetId) {
     screens.forEach(screen => screen.classList.remove('active'));
     const targetNav = document.querySelector(`[data-target="${targetId}"]`);
     if(targetNav) targetNav.classList.add('active');
-    document.getElementById(targetId).classList.add('active');
+    
+    const targetElement = document.getElementById(targetId);
+    if(targetElement) targetElement.classList.add('active');
 }
 
-navItems.forEach(item => item.addEventListener('click', () => switchScreen(item.dataset.target)));
+if(navItems) {
+    navItems.forEach(item => item.addEventListener('click', () => switchScreen(item.dataset.target)));
+}
 
 let currentConfig = { 
     apiKey: localStorage.getItem('geminiApiKey') || '',
@@ -212,8 +212,11 @@ function startListening() {
     const langCodes = { 'English': 'en-US', 'French': 'fr-FR', 'Spanish': 'es-ES', 'German': 'de-DE', 'Arabic': 'ar-SA', 'Italian': 'it-IT', 'Portuguese': 'pt-PT', 'Turkish': 'tr-TR' };
     recognition.lang = langCodes[currentConfig.chatLanguage] || 'en-US';
     
-    document.getElementById('voice-status-text').textContent = "جاري الاستماع...";
-    document.getElementById('voice-live-transcript').textContent = "...";
+    const voiceStatus = document.getElementById('voice-status-text');
+    const voiceTrans = document.getElementById('voice-live-transcript');
+    if(voiceStatus) voiceStatus.textContent = "جاري الاستماع...";
+    if(voiceTrans) voiceTrans.textContent = "...";
+    
     setSpeakingUI(false); 
     try { recognition.start(); } catch(e) {}
 }
@@ -230,8 +233,11 @@ async function speakText(text) {
     let spokenText = text.split("💡")[0].trim();
     if (!currentConfig.elevenKey) { speakTextFree(spokenText); return; }
     
-    document.getElementById('voice-status-text').textContent = "يجهز الصوت البشري...";
-    document.getElementById('voice-status-text').style.color = "var(--text-light)";
+    const voiceStatus = document.getElementById('voice-status-text');
+    if(voiceStatus) {
+        voiceStatus.textContent = "يجهز الصوت البشري...";
+        voiceStatus.style.color = "var(--text-light)";
+    }
     
     try {
         const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM`, {
@@ -247,8 +253,8 @@ async function speakText(text) {
         const audioUrl = URL.createObjectURL(await response.blob());
         if (currentAudio) currentAudio.pause();
         currentAudio = new Audio(audioUrl);
-        document.getElementById('voice-status-text').textContent = "الذكاء الاصطناعي يتحدث...";
-        document.getElementById('voice-live-transcript').textContent = spokenText; 
+        if(voiceStatus) voiceStatus.textContent = "الذكاء الاصطناعي يتحدث...";
+        if(transcriptText) transcriptText.textContent = spokenText; 
         setSpeakingUI(true); 
         currentAudio.play();
         
@@ -258,10 +264,11 @@ async function speakText(text) {
         };
         
     } catch (e) { 
-        console.warn("ElevenLabs failed:", e);
-        document.getElementById('voice-status-text').textContent = `خطأ ElevenLabs: ${e.message}`;
-        document.getElementById('voice-status-text').style.color = "var(--brand-danger)";
-        setTimeout(() => { document.getElementById('voice-status-text').style.color = "var(--text-light)"; speakTextFree(spokenText); }, 3500);
+        if(voiceStatus) {
+            voiceStatus.textContent = `خطأ ElevenLabs: ${e.message}`;
+            voiceStatus.style.color = "var(--brand-danger)";
+        }
+        setTimeout(() => { if(voiceStatus) voiceStatus.style.color = "var(--text-light)"; speakTextFree(spokenText); }, 3500);
     }
 }
 
@@ -270,8 +277,9 @@ function speakTextFree(spokenText) {
     const langCodes = { 'English': 'en-US', 'French': 'fr-FR', 'Spanish': 'es-ES', 'German': 'de-DE', 'Arabic': 'ar-SA', 'Italian': 'it-IT', 'Portuguese': 'pt-PT', 'Turkish': 'tr-TR' };
     utterance.lang = langCodes[currentConfig.chatLanguage] || 'en-US';
     
-    document.getElementById('voice-status-text').textContent = "الذكاء الاصطناعي يتحدث...";
-    document.getElementById('voice-live-transcript').textContent = spokenText; 
+    const voiceStatus = document.getElementById('voice-status-text');
+    if(voiceStatus) voiceStatus.textContent = "الذكاء الاصطناعي يتحدث...";
+    if(transcriptText) transcriptText.textContent = spokenText; 
     setSpeakingUI(true); 
     
     utterance.onend = function() { setSpeakingUI(false); if (isVoiceModeActive) setTimeout(startListening, 500); };
@@ -282,19 +290,21 @@ recognition.onresult = function(event) {
     let finalTranscript = '';
     for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript; }
     if (finalTranscript !== '') {
-        recognition.stop(); document.getElementById('voice-live-transcript').textContent = finalTranscript;
+        recognition.stop(); 
+        if(transcriptText) transcriptText.textContent = finalTranscript;
         triggerActivity(); fetchAIResponse(finalTranscript, true); 
     }
 };
 
 recognition.onerror = function(event) { if (event.error === 'no-speech' && isVoiceModeActive) startListening(); };
 
-// بدء المحادثة مباشرة في صلب الموضوع (بدون Hello الغبية)
+// بدء المحادثة مباشرة في صلب الموضوع 
 function startVoiceSession() {
     if (!currentConfig.apiKey) { alert("الرجاء إدخال Gemini API Key في الإعدادات!"); switchScreen('settings-screen'); return; }
     isVoiceModeActive = true; switchScreen('voice-screen'); 
     
-    document.getElementById('voice-status-text').textContent = "يتم تحضير السيناريو...";
+    const voiceStatus = document.getElementById('voice-status-text');
+    if(voiceStatus) voiceStatus.textContent = "يتم تحضير السيناريو...";
     
     let hiddenPrompt = "";
     if (currentConfig.userRole && currentConfig.aiRole && currentConfig.scenarioPlace) {
@@ -355,24 +365,24 @@ function getSystemPrompt() {
     1. Your conversational response MUST be entirely in ${currentConfig.chatLanguage}. Keep it natural and short (1-3 sentences).
     2. ERROR CORRECTION PROTOCOL: 
        - IF the user makes a clear grammar or vocabulary mistake: You MUST add a new line at the very end starting exactly with "💡 الملاحظة: " in Arabic explaining the mistake.
-       - IF the user's sentence is perfectly correct: Output ONLY your conversational response. DO NOT add any note. DO NOT write words like "تعبير صحيح" or "جيد".`;
+       - IF the user's sentence is perfectly correct: Output ONLY your conversational response. DO NOT add any note. DO NOT write words like "تعبير صحيح" or "جيد" or anything similar.`;
     
     return basePrompt;
 }
 
-// هنا تم إصلاح الخلل الكارثي في أسماء الموديلات وعادت للأسماء الصحيحة 100%
 async function fetchAIResponse(userText, isVoiceCall = false) {
     if (!currentConfig.apiKey) return;
     
+    // منع تسجيل الكلام الصوتي والأوامر المخفية في الشات الكتابي
     if (!isVoiceCall) {
         if (!userText.includes("[SYSTEM INSTRUCTION]")) {
             addChatMessage(userText, true); 
         }
     } else {
-        document.getElementById('voice-status-text').textContent = "الذكاء الاصطناعي يفكر...";
+        const voiceStatus = document.getElementById('voice-status-text');
+        if(voiceStatus) voiceStatus.textContent = "الذكاء الاصطناعي يفكر...";
     }
 
-    // هنا كان الخطأ، قمت بإرجاع الموديلات الحقيقية والصحيحة لتفادي الانهيار
     let modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-1.5-pro", "gemini-pro"];
     let success = false;
     let replyText = "";
@@ -406,7 +416,8 @@ async function fetchAIResponse(userText, isVoiceCall = false) {
         }
     } else {
         if (isVoiceCall) {
-            document.getElementById('voice-status-text').textContent = "خطأ نهائي في الاتصال";
+            const voiceStatus = document.getElementById('voice-status-text');
+            if(voiceStatus) voiceStatus.textContent = "خطأ نهائي في الاتصال";
             setTimeout(startListening, 3000);
         } else {
             addChatMessage(`⚠️ رسالة الخطأ من جوجل: ${lastError}`, false);
@@ -418,6 +429,4 @@ const chatBox = document.getElementById('chat-box');
 const userInput = document.getElementById('user-input');
 if (document.getElementById('send-btn')) {
     document.getElementById('send-btn').addEventListener('click', () => {
-        const text = userInput.value.trim();
-        if (text) { 
-            if 
+        const text = user
