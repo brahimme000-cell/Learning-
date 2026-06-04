@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Tutor - Gemini Voice UI</title>
+    <title>AI Tutor - Pro Teacher Engine</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -11,20 +11,24 @@
 
 <div id="app-container">
     
+    <!-- الشاشة 1: الرئيسية -->
     <main id="home-screen" class="screen active">
         <div class="top-bar">
+            <!-- الشعلة (الستريك) -->
             <div class="streak-badge" id="streak-container" title="أيام النشاط">
                 <i class="fa-solid fa-fire" id="streak-icon"></i> 
                 <span id="streak-count">0</span>
             </div>
             
+            <!-- الزر السريع للغة والمستوى -->
             <button id="quick-prefs-btn" class="top-select-btn">
-                <span id="quick-prefs-display">🇺🇸 English • مبتدئ</span>
+                <span id="quick-prefs-display">🇺🇸 English • متوسط</span>
                 <i class="fa-solid fa-chevron-down"></i>
             </button>
         </div>
         
         <div class="center-content">
+            <!-- اللوجو الرئيسي (كتاب اللغات) -->
             <div class="custom-book-logo" id="main-logo">
                 <i class="fa-solid fa-sparkles logo-sparkle"></i>
                 <div class="book-pages">
@@ -46,6 +50,7 @@
         </div>
     </main>
 
+    <!-- الشاشة 2: المحادثة الصوتية المستقلة -->
     <main id="voice-screen" class="screen voice-mode-screen">
         <div class="voice-header">
             <span>محادثة صوتية مباشرة</span>
@@ -71,20 +76,21 @@
         </div>
     </main>
 
+    <!-- نافذة السيناريو المنبثقة -->
     <div id="scenario-modal" class="modal hidden">
         <div class="modal-content">
             <h3 class="modal-title">تخصيص المحادثة</h3>
             <div class="setting-card">
                 <label>دورك (من أنت؟)</label>
-                <input type="text" id="user-role" placeholder="مثال: زبون، مسافر...">
+                <input type="text" id="user-role" placeholder="مثال: زبون، سائح...">
             </div>
             <div class="setting-card">
                 <label>دور المعلم (من أنا؟)</label>
-                <input type="text" id="ai-role" placeholder="مثال: نادل، موظف المطار...">
+                <input type="text" id="ai-role" placeholder="مثال: نادل، ضابط الجوازات...">
             </div>
             <div class="setting-card">
                 <label>المكان / الموقف</label>
-                <input type="text" id="scenario-place" placeholder="مثال: في المطعم...">
+                <input type="text" id="scenario-place" placeholder="مثال: في مطعم إيطالي...">
             </div>
             <div class="modal-actions">
                 <button id="close-scenario-btn" class="text-btn">إلغاء</button>
@@ -93,10 +99,12 @@
         </div>
     </div>
 
+    <!-- الشاشة 3: المحادثة الكتابية -->
     <main id="chat-screen" class="screen">
         <div class="chat-header">Text Chat</div>
         <div id="chat-box">
-            <div class="message bot-msg"><div class="msg-content">Welcome! Let's practice.</div></div>
+            <!-- رسالة الترحيب -->
+            <div class="message bot-msg"><div class="msg-content">أهلاً بك! أنا أستاذك الافتراضي. كيف يمكنني مساعدتك في تطوير لغتك اليوم؟</div></div>
         </div>
         <div id="input-area">
             <input type="text" id="user-input" placeholder="Type a message...">
@@ -104,6 +112,7 @@
         </div>
     </main>
 
+    <!-- الشاشة 4: الإعدادات -->
     <main id="settings-screen" class="screen">
         <div class="settings-header">الإعدادات العامة</div>
         <div class="settings-list">
@@ -112,7 +121,7 @@
                 <input type="password" id="api-key-input" placeholder="gsk_...">
             </div>
             <div class="setting-card">
-                <label><i class="fa-solid fa-masks-theater"></i> أسلوب المعلم</label>
+                <label><i class="fa-solid fa-masks-theater"></i> أسلوب المعلم / قساوة التصحيح</label>
                 <button id="style-selector-btn" class="custom-select-btn full-width">
                     <span id="style-display">مؤدب ومشجع</span>
                     <i class="fa-solid fa-chevron-down"></i>
@@ -122,6 +131,7 @@
         </div>
     </main>
 
+    <!-- قائمة التنقل السفلية -->
     <nav class="bottom-nav">
         <button class="nav-item active" data-target="home-screen">
             <i class="fa-solid fa-microphone"></i><span>Speak</span>
@@ -134,6 +144,7 @@
         </button>
     </nav>
 
+    <!-- القائمة المنبثقة السفلية (Bottom Sheet) تم إصلاح التداخل هنا -->
     <div id="bottom-sheet" class="sheet-overlay hidden">
         <div class="sheet-content">
             <div class="sheet-header">
@@ -142,12 +153,13 @@
                 <button id="close-sheet-btn" class="icon-btn"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div id="sheet-options" class="sheet-options-list">
-                </div>
+                <!-- الخيارات -->
+            </div>
         </div>
     </div>
 </div>
 
 <script src="app.js"></script>
 </body>
-                </html>
-                
+            </html>
+            
