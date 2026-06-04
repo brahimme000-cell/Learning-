@@ -289,7 +289,7 @@ recognition.onresult = function(event) {
 
 recognition.onerror = function(event) { if (event.error === 'no-speech' && isVoiceModeActive) startListening(); };
 
-// برمجة ذكية لبدء الحوار: الذكاء الاصطناعي سيبدأ الكلام مباشرة في صلب الموضوع
+// بدء المحادثة مباشرة في صلب الموضوع (بدون Hello الغبية)
 function startVoiceSession() {
     if (!currentConfig.apiKey) { alert("الرجاء إدخال Gemini API Key في الإعدادات!"); switchScreen('settings-screen'); return; }
     isVoiceModeActive = true; switchScreen('voice-screen'); 
@@ -303,7 +303,6 @@ function startVoiceSession() {
         hiddenPrompt = `[SYSTEM INSTRUCTION]: Start the conversation. Greet the user naturally in ${currentConfig.chatLanguage} and ask an interesting question to get them talking.`;
     }
     
-    // إرسال الطلب المخفي ليقوم الذكاء الاصطناعي ببدء المحادثة
     fetchAIResponse(hiddenPrompt, true);
 }
 
@@ -314,7 +313,6 @@ if (document.getElementById('end-voice-call-btn')) {
     });
 }
 
-// التعديل الجذري للقضاء على جملة (تعبير صحيح) وفرض الشخصية الواقعية
 function getSystemPrompt() {
     let levelInstructions = "";
     switch(currentConfig.userLevel) {
@@ -362,11 +360,11 @@ function getSystemPrompt() {
     return basePrompt;
 }
 
+// هنا تم إصلاح الخلل الكارثي في أسماء الموديلات وعادت للأسماء الصحيحة 100%
 async function fetchAIResponse(userText, isVoiceCall = false) {
     if (!currentConfig.apiKey) return;
     
     if (!isVoiceCall) {
-        // حماية: إذا لم يكن أمراً مخفياً من النظام، أضفه للشات النصي
         if (!userText.includes("[SYSTEM INSTRUCTION]")) {
             addChatMessage(userText, true); 
         }
@@ -374,7 +372,8 @@ async function fetchAIResponse(userText, isVoiceCall = false) {
         document.getElementById('voice-status-text').textContent = "الذكاء الاصطناعي يفكر...";
     }
 
-    let modelsToTry = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-flash-latest"];
+    // هنا كان الخطأ، قمت بإرجاع الموديلات الحقيقية والصحيحة لتفادي الانهيار
+    let modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-1.5-pro", "gemini-pro"];
     let success = false;
     let replyText = "";
     let lastError = "";
@@ -419,4 +418,6 @@ const chatBox = document.getElementById('chat-box');
 const userInput = document.getElementById('user-input');
 if (document.getElementById('send-btn')) {
     document.getElementById('send-btn').addEventListener('click', () => {
-        const text = userIn
+        const text = userInput.value.trim();
+        if (text) { 
+            if 
