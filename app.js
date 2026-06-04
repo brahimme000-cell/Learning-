@@ -32,8 +32,8 @@ let currentConfig = {
     chatLangLabel: localStorage.getItem('chatLangLabel') || '🇺🇸',
     expressionStyle: localStorage.getItem('chatStyle') || 'polite',
     expressionStyleLabel: localStorage.getItem('chatStyleLabel') || 'مؤدب ومشجع',
-    userLevel: localStorage.getItem('userLevel') || 'Beginner',
-    userLevelLabel: localStorage.getItem('userLevelLabel') || 'مبتدئ',
+    userLevel: localStorage.getItem('userLevel') || 'Intermediate',
+    userLevelLabel: localStorage.getItem('userLevelLabel') || 'متوسط',
     userRole: '', aiRole: '', scenarioPlace: ''
 };
 
@@ -183,7 +183,7 @@ document.getElementById('style-selector-btn').addEventListener('click', () => {
         { value: 'sarcastic', label: 'ساخر (Sarcastic)' },
         { value: 'strict', label: 'صارم وجدي' }
     ];
-    openSheet('أسلوب المعلم', options, currentConfig.expressionStyle, (selected) => {
+    openSheet('أسلوب المعلم (قساوة التصحيح)', options, currentConfig.expressionStyle, (selected) => {
         currentConfig.expressionStyle = selected.value;
         currentConfig.expressionStyleLabel = selected.label;
         localStorage.setItem('chatStyle', selected.value);
@@ -241,11 +241,15 @@ function startListening() {
 function speakText(text) {
     if (!synth) return;
     synth.cancel(); 
-    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // إزالة جزء التصحيح عند النطق لتجنب إزعاج المستخدم بقراءة "الملاحظات" صوتياً
+    let spokenText = text.split("💡")[0]; 
+    
+    const utterance = new SpeechSynthesisUtterance(spokenText);
     utterance.lang = getSpeechLangCode();
     
     voiceStatusText.textContent = "الذكاء الاصطناعي يتحدث...";
-    voiceLiveTranscript.textContent = text; 
+    voiceLiveTranscript.textContent = spokenText; 
     voiceLogo.classList.add('speaking-animation');
 
     utterance.onend = function() {
@@ -295,36 +299,37 @@ endVoiceCallBtn.addEventListener('click', () => {
     switchScreen('home-screen'); 
 });
 
-// --- AI Engine (Strict Level Control) ---
+// --- AI Engine (Expert Teacher with Corrections) ---
 function getSystemPrompt() {
     let levelInstructions = "";
-    // توجيهات صارمة جداً للذكاء الاصطناعي ليتحدث بناءً على المستوى المختار
     switch(currentConfig.userLevel) {
-        case 'Beginner': 
-            levelInstructions = "Use extremely simple vocabulary, basic grammar, and short sentences. Speak slowly and clearly. Avoid complex idioms."; 
-            break;
-        case 'Intermediate': 
-            levelInstructions = "Use everyday conversational language, moderate sentence structures, and common phrasal verbs."; 
-            break;
-        case 'Advanced': 
-            levelInstructions = "Use advanced vocabulary, complex grammar, rich idioms, and speak like a well-educated native speaker."; 
-            break;
-        case 'Native': 
-            levelInstructions = "Use natural slang, deep cultural expressions, highly complex idioms, and speak fast and naturally as if talking to a local friend."; 
-            break;
+        case 'Beginner': levelInstructions = "Use very simple words."; break;
+        case 'Intermediate': levelInstructions = "Use everyday conversational language."; break;
+        case 'Advanced': levelInstructions = "Use advanced vocabulary and idioms."; break;
+        case 'Native': levelInstructions = "Use natural slang and fast local expressions."; break;
     }
 
-    let basePrompt = `You are a highly adaptive language tutor for ${currentConfig.chatLanguage}. 
-    CRITICAL: You MUST refuse any general knowledge questions outside of language learning. 
-    User's Level: ${currentConfig.userLevel}. 
-    YOUR SPEAKING STYLE: ${levelInstructions}. 
-    Keep all your responses short (1-2 sentences maximum) to keep the conversation flowing. `;
+    let strictness = "";
+    if (currentConfig.expressionStyle === 'sarcastic') strictness = "Be highly sarcastic and mock their mistakes before correcting them.";
+    else if (currentConfig.expressionStyle === 'polite') strictness = "Be polite, encouraging, and gentle with corrections.";
+    else strictness = "Be very strict, direct, and professional with corrections.";
+
+    // الهندسة الوصفية الصارمة للمحرك
+    let basePrompt = `You are an expert language teacher and roleplay actor for ${currentConfig.chatLanguage}. 
+    User's Level: ${currentConfig.userLevel}. (${levelInstructions})
+    Teacher Persona: ${strictness}
     
-    if (currentConfig.expressionStyle === 'sarcastic') basePrompt += "Mock mistakes ruthlessly before correcting. ";
-    else if (currentConfig.expressionStyle === 'polite') basePrompt += "Gently correct mistakes. ";
+    CRITICAL INSTRUCTION - FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
+    1. First, reply naturally to the conversation (in character).
+    2. Then, add a new line starting with "💡 الملاحظة: " (in Arabic). In this line, analyze the user's input. If they made a grammar, vocabulary, or naturalness mistake, correct it. If their input was perfect, say "نطق وتركيب ممتاز!".
+    
+    Example Output:
+    Hello! What would you like to order today?
+    💡 الملاحظة: قلت "I wants", الصحيح هو "I want" لأن الفعل لا يأخذ s مع الضمير I.
+    `;
     
     if (currentConfig.userRole && currentConfig.aiRole && currentConfig.scenarioPlace) {
-        basePrompt += `\nROLEPLAY SCENARIO: Place: ${currentConfig.scenarioPlace}. User is ${currentConfig.userRole}, YOU are ${currentConfig.aiRole}. Stay in character.`;
+        basePrompt += `\nROLEPLAY SCENARIO: We are at ${currentConfig.scenarioPlace}. The user is the ${currentConfig.userRole} and YOU are the ${currentConfig.aiRole}. Stay strictly in character for the conversational part.`;
     }
     return basePrompt;
 }
@@ -333,7 +338,7 @@ async function fetchAIResponse(userText, isVoiceCall = false) {
     if (!currentConfig.apiKey) return;
     
     if (!isVoiceCall) addChatMessage(userText, true);
-    else voiceStatusText.textContent = "يفكر...";
+    else voiceStatusText.textContent = "يحلل الجملة...";
 
     try {
         const response = await fetch(API_URL, {
@@ -344,14 +349,19 @@ async function fetchAIResponse(userText, isVoiceCall = false) {
                 messages: [
                     { role: "system", content: getSystemPrompt() },
                     { role: "user", content: userText }
-                ]
+                ],
+                temperature: 0.5 // تقليل الحرارة لضمان اتباع التنسيق بدقة
             })
         });
         const data = await response.json();
         const replyText = data.choices[0].message.content;
         
+        // في وضع الشات، نظهر الجواب والملاحظة معاً
+        addChatMessage(replyText, false); 
+        
+        // في وضع الصوت، نجعله ينطق الجواب فقط بدون نطق "الملاحظة"
         if (isVoiceCall) speakText(replyText); 
-        else addChatMessage(replyText, false);
+        
     } catch (error) {
         if (isVoiceCall) {
             voiceStatusText.textContent = "خطأ في الاتصال";
