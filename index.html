@@ -2,359 +2,152 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sarcastic Tutor</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-        body { background-color: #f0f2f5; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
-        
-        #app-container { width: 100%; max-width: 400px; background: white; display: flex; flex-direction: column; box-shadow: 0 0 10px rgba(0,0,0,0.1); position: relative; height: 100%; }
-        
-        #header { background: #007bff; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 18px; }
-        .header-buttons { display: flex; gap: 10px; }
-        .header-btn { background: none; border: none; color: white; font-size: 20px; cursor: pointer; }
-        
-        #chat-box { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .message { padding: 10px 15px; border-radius: 15px; max-width: 80%; line-height: 1.4; word-wrap: break-word; }
-        .user-msg { background: #007bff; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
-        .bot-msg { background: #e4e6eb; color: black; align-self: flex-start; border-bottom-left-radius: 2px; }
-        .error-msg { background: #ffdddd; color: #d8000c; align-self: flex-start; border-bottom-left-radius: 2px; font-size: 14px; border: 1px solid #d8000c; }
-        
-        #input-area { display: flex; padding: 10px; border-top: 1px solid #ddd; background: white; align-items: center; gap: 5px; }
-        #user-input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 20px; outline: none; }
-        #mic-btn { background: #28a745; color: white; border: none; padding: 12px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 18px; transition: 0.3s; }
-        #send-btn { background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 50%; cursor: pointer; font-weight: bold; }
-        
-        #voice-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #111; color: white; flex-direction: column; justify-content: center; align-items: center; z-index: 20; text-align: center; }
-        .ai-avatar { font-size: 80px; margin-bottom: 20px; transition: transform 0.2s; }
-        .ai-avatar.speaking { animation: pulseAvatar 0.8s infinite alternate; text-shadow: 0 0 20px #007bff; }
-        .voice-status { font-size: 18px; font-weight: bold; margin-bottom: 40px; color: #aaa; }
-        .voice-status.listening { color: #28a745; }
-        .voice-status.speaking { color: #007bff; }
-        .voice-status.error { color: #dc3545; }
-        #end-call-btn { background: #dc3545; color: white; border: none; padding: 15px 30px; border-radius: 30px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 40px; box-shadow: 0 4px 10px rgba(220,53,69,0.4); }
-        
-        @keyframes pulseAvatar { 0% { transform: scale(1); } 100% { transform: scale(1.1); } }
-
-        #settings-modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 10; }
-        .modal-content { background: white; width: 85%; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
-        .modal-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; text-align: center; color: #333; }
-        .setting-group { margin-bottom: 15px; }
-        .setting-group label { display: block; font-size: 14px; color: #666; margin-bottom: 5px; font-weight: 500; }
-        .setting-group select, .setting-group textarea, .setting-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; outline: none; font-size: 14px; background-color: #f9f9f9; }
-        .setting-group textarea { resize: vertical; min-height: 60px; }
-        #close-settings-btn { width: 100%; background: #007bff; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Tutor - Gemini Voice UI</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
 <div id="app-container">
-    <div id="header">
-        <span>AI Tutor 🤖</span>
-        <div class="header-buttons">
-            <button id="settings-btn" class="header-btn" title="Settings">⚙️</button>
+    
+    <main id="home-screen" class="screen active">
+        <div class="top-bar">
+            <div class="streak-badge" id="streak-container" title="أيام النشاط">
+                <i class="fa-solid fa-fire" id="streak-icon"></i> 
+                <span id="streak-count">0</span>
+            </div>
+            
+            <button id="quick-prefs-btn" class="top-select-btn">
+                <span id="quick-prefs-display">🇺🇸 English • مبتدئ</span>
+                <i class="fa-solid fa-chevron-down"></i>
+            </button>
+        </div>
+        
+        <div class="center-content">
+            <div class="custom-book-logo" id="main-logo">
+                <i class="fa-solid fa-sparkles logo-sparkle"></i>
+                <div class="book-pages">
+                    <div class="page-left">A</div>
+                    <div class="page-right">أ</div>
+                </div>
+            </div>
+            
+            <h2 id="greeting-text">جاهز للتدريب؟</h2>
+            
+            <div class="action-buttons-container" id="home-actions">
+                <button id="guided-practice-btn" class="primary-btn">
+                    <i class="fa-solid fa-map-location-dot"></i> ممارسة منهجية
+                </button>
+                <button id="open-scenario-btn" class="secondary-btn">
+                    <i class="fa-solid fa-masks-theater"></i> إنشاء محادثة (سيناريو)
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <main id="voice-screen" class="screen voice-mode-screen">
+        <div class="voice-header">
+            <span>محادثة صوتية مباشرة</span>
+        </div>
+        
+        <div class="voice-center">
+            <div class="custom-book-logo voice-large-logo" id="voice-logo">
+                <i class="fa-solid fa-sparkles logo-sparkle"></i>
+                <div class="book-pages">
+                    <div class="page-left">A</div>
+                    <div class="page-right">أ</div>
+                </div>
+            </div>
+            
+            <h3 id="voice-status-text">جاري الاستماع...</h3>
+            <p id="voice-live-transcript" class="transcript-text">...</p>
+        </div>
+        
+        <div class="voice-footer">
+            <button id="end-voice-call-btn" class="danger-btn round-btn">
+                <i class="fa-solid fa-phone-slash"></i>
+            </button>
+        </div>
+    </main>
+
+    <div id="scenario-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 class="modal-title">تخصيص المحادثة</h3>
+            <div class="setting-card">
+                <label>دورك (من أنت؟)</label>
+                <input type="text" id="user-role" placeholder="مثال: زبون، مسافر...">
+            </div>
+            <div class="setting-card">
+                <label>دور المعلم (من أنا؟)</label>
+                <input type="text" id="ai-role" placeholder="مثال: نادل، موظف المطار...">
+            </div>
+            <div class="setting-card">
+                <label>المكان / الموقف</label>
+                <input type="text" id="scenario-place" placeholder="مثال: في المطعم...">
+            </div>
+            <div class="modal-actions">
+                <button id="close-scenario-btn" class="text-btn">إلغاء</button>
+                <button id="start-scenario-btn" class="primary-btn small-btn">ابدأ المحادثة</button>
+            </div>
         </div>
     </div>
-    
-    <div id="chat-box">
-        <div class="message bot-msg">Hello! Before we start, please click the settings icon (⚙️) and enter your Groq API Key to enable my brain.</div>
-    </div>
-    
-    <div id="input-area">
-        <button id="mic-btn" title="Start Voice Call">🎤</button>
-        <input type="text" id="user-input" placeholder="Type a message or click mic...">
-        <button id="send-btn">➤</button>
-    </div>
 
-    <div id="voice-overlay">
-        <div class="ai-avatar" id="call-avatar">🤖</div>
-        <div class="voice-status" id="call-status">Connecting...</div>
-        <div id="live-transcript" style="font-size: 14px; color: #fff; margin-top: 20px; padding: 0 20px; min-height: 40px; font-style: italic;"></div>
-        <button id="end-call-btn">End Conversation</button>
-    </div>
+    <main id="chat-screen" class="screen">
+        <div class="chat-header">Text Chat</div>
+        <div id="chat-box">
+            <div class="message bot-msg"><div class="msg-content">Welcome! Let's practice.</div></div>
+        </div>
+        <div id="input-area">
+            <input type="text" id="user-input" placeholder="Type a message...">
+            <button id="send-btn" class="send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </main>
 
-    <div id="settings-modal">
-        <div class="modal-content">
-            <div class="modal-title">Settings / الإعدادات</div>
-            
-            <div class="setting-group">
-                <label>Groq API Key (مطلوب للتشغيل) 🔑</label>
+    <main id="settings-screen" class="screen">
+        <div class="settings-header">الإعدادات العامة</div>
+        <div class="settings-list">
+            <div class="setting-card">
+                <label><i class="fa-solid fa-key"></i> Groq API Key</label>
                 <input type="password" id="api-key-input" placeholder="gsk_...">
             </div>
+            <div class="setting-card">
+                <label><i class="fa-solid fa-masks-theater"></i> أسلوب المعلم</label>
+                <button id="style-selector-btn" class="custom-select-btn full-width">
+                    <span id="style-display">مؤدب ومشجع</span>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </button>
+            </div>
+            <button id="save-settings-btn" class="primary-btn" style="margin-top: 10px;">حفظ الإعدادات</button>
+        </div>
+    </main>
 
-            <div class="setting-group">
-                <label>Target Language / اللغة</label>
-                <select id="chat-lang">
-                    <option value="English">English (الإنجليزية)</option>
-                    <option value="French">Français (الفرنسية)</option>
-                    <option value="Spanish">Español (الإسبانية)</option>
-                    <option value="German">Deutsch (الألمانية)</option>
-                    <option value="Italian">Italiano (الإيطالية)</option>
-                    <option value="Portuguese">Português (البرتغالية)</option>
-                    <option value="Russian">Русский (الروسية)</option>
-                    <option value="Japanese">日本語 (اليابانية)</option>
-                    <option value="Arabic">العربية (Arabic)</option>
-                </select>
-            </div>
-            
-            <div class="setting-group">
-                <label>Tutor Personality / الأسلوب</label>
-                <select id="chat-style">
-                    <option value="sarcastic">Sarcastic / ساخر ومتنمر 🤬</option>
-                    <option value="polite">Polite / مؤدب ومشجع 😇</option>
-                    <option value="strict">Strict / صارم 😐</option>
-                </select>
-            </div>
+    <nav class="bottom-nav">
+        <button class="nav-item active" data-target="home-screen">
+            <i class="fa-solid fa-microphone"></i><span>Speak</span>
+        </button>
+        <button class="nav-item" data-target="chat-screen">
+            <i class="fa-solid fa-message"></i><span>Chat</span>
+        </button>
+        <button class="nav-item" data-target="settings-screen">
+            <i class="fa-solid fa-gear"></i><span>Settings</span>
+        </button>
+    </nav>
 
-            <div class="setting-group">
-                <label>Custom Scenario / سكريبت المحادثة (اختياري)</label>
-                <textarea id="custom-script" placeholder="مثال: نحن الآن في مقهى وأنت النادل..."></textarea>
+    <div id="bottom-sheet" class="sheet-overlay hidden">
+        <div class="sheet-content">
+            <div class="sheet-header">
+                <button id="back-sheet-btn" class="icon-btn hidden"><i class="fa-solid fa-arrow-right"></i></button>
+                <h3 id="sheet-title">اختر</h3>
+                <button id="close-sheet-btn" class="icon-btn"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            
-            <button id="close-settings-btn">Save & Close / حفظ</button>
+            <div id="sheet-options" class="sheet-options-list">
+                </div>
         </div>
     </div>
 </div>
 
-<script>
-    // لم يعد المفتاح موجوداً في الكود! 
-    const API_URL = "https://api.groq.com/openai/v1/chat/completions";
-
-    const chatBox = document.getElementById('chat-box');
-    const userInput = document.getElementById('user-input');
-    const sendBtn = document.getElementById('send-btn');
-    const micBtn = document.getElementById('mic-btn');
-    const settingsBtn = document.getElementById('settings-btn');
-    const settingsModal = document.getElementById('settings-modal');
-    const closeSettingsBtn = document.getElementById('close-settings-btn');
-
-    const voiceOverlay = document.getElementById('voice-overlay');
-    const callAvatar = document.getElementById('call-avatar');
-    const callStatus = document.getElementById('call-status');
-    const endCallBtn = document.getElementById('end-call-btn');
-    const liveTranscript = document.getElementById('live-transcript');
-
-    // استرجاع الإعدادات من الذاكرة إذا كانت موجودة
-    let currentConfig = { 
-        apiKey: localStorage.getItem('groqApiKey') || '',
-        chatLanguage: localStorage.getItem('chatLang') || 'English', 
-        expressionStyle: localStorage.getItem('chatStyle') || 'sarcastic', 
-        customScript: localStorage.getItem('customScript') || '' 
-    };
-
-    // تعبئة الخانات بالبيانات المحفوظة
-    document.getElementById('api-key-input').value = currentConfig.apiKey;
-    document.getElementById('chat-lang').value = currentConfig.chatLanguage;
-    document.getElementById('chat-style').value = currentConfig.expressionStyle;
-    document.getElementById('custom-script').value = currentConfig.customScript;
-
-    let isVoiceModeActive = false; 
-
-    let synth = window.speechSynthesis;
-    let recognition;
-    
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SpeechRecognition();
-        recognition.continuous = false; 
-        recognition.interimResults = true; 
-    } else {
-        alert("متصفحك لا يدعم ميزة التعرف على الصوت. المرجو استخدام Google Chrome.");
-    }
-
-    settingsBtn.addEventListener('click', () => settingsModal.style.display = 'flex');
-    
-    closeSettingsBtn.addEventListener('click', () => {
-        // حفظ القيم في المتغيرات
-        currentConfig.apiKey = document.getElementById('api-key-input').value.trim();
-        currentConfig.chatLanguage = document.getElementById('chat-lang').value;
-        currentConfig.expressionStyle = document.getElementById('chat-style').value;
-        currentConfig.customScript = document.getElementById('custom-script').value;
-        
-        // حفظ القيم في ذاكرة الهاتف (LocalStorage)
-        localStorage.setItem('groqApiKey', currentConfig.apiKey);
-        localStorage.setItem('chatLang', currentConfig.chatLanguage);
-        localStorage.setItem('chatStyle', currentConfig.expressionStyle);
-        localStorage.setItem('customScript', currentConfig.customScript);
-
-        settingsModal.style.display = 'none';
-        
-        if (currentConfig.apiKey === '') {
-            addMessage("تحذير: لم تقم بإدخال مفتاح API. لن يعمل التطبيق بدونه.", false, true);
-        } else {
-            addMessage(`Settings updated! Ready to learn ${currentConfig.chatLanguage}.`, false);
-        }
-    });
-
-    function addMessage(text, isUser, isError = false) {
-        const msgDiv = document.createElement('div');
-        msgDiv.classList.add('message', isError ? 'error-msg' : (isUser ? 'user-msg' : 'bot-msg'));
-        msgDiv.textContent = text;
-        chatBox.appendChild(msgDiv);
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    function getSpeechLangCode() {
-        const langs = {
-            'English': 'en-US', 'French': 'fr-FR', 'Spanish': 'es-ES', 'German': 'de-DE',
-            'Italian': 'it-IT', 'Portuguese': 'pt-PT', 'Russian': 'ru-RU', 'Japanese': 'ja-JP', 'Arabic': 'ar-SA'
-        };
-        return langs[currentConfig.chatLanguage] || 'en-US';
-    }
-
-    function startListening() {
-        if (!isVoiceModeActive || !recognition) return;
-        recognition.lang = getSpeechLangCode();
-        callStatus.textContent = "Listening... (تحدث الآن)";
-        callStatus.className = "voice-status listening";
-        callAvatar.classList.remove('speaking');
-        liveTranscript.textContent = "...";
-        try { recognition.start(); } catch(e) {}
-    }
-
-    function speakText(text) {
-        if (!synth) return;
-        synth.cancel(); 
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = getSpeechLangCode();
-        callStatus.textContent = "AI is Speaking... (يستمع لك بعد قليل)";
-        callStatus.className = "voice-status speaking";
-        callAvatar.classList.add('speaking');
-        liveTranscript.textContent = text; 
-
-        utterance.onend = function() {
-            if (isVoiceModeActive) {
-                setTimeout(startListening, 500); 
-            } else {
-                callAvatar.classList.remove('speaking');
-            }
-        };
-        synth.speak(utterance);
-    }
-
-    recognition.onresult = function(event) {
-        let interimTranscript = '';
-        let finalTranscript = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-            if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript;
-            else interimTranscript += event.results[i][0].transcript;
-        }
-        liveTranscript.textContent = finalTranscript || interimTranscript;
-        if (finalTranscript !== '') {
-            recognition.stop();
-            addMessage(finalTranscript, true); 
-            fetchAIResponse(finalTranscript); 
-        }
-    };
-
-    recognition.onerror = function(event) {
-        if (event.error === 'not-allowed') {
-            callStatus.textContent = "Microphone Blocked! (المايكروفون ممنوع)";
-            callStatus.className = "voice-status error";
-            alert("خطأ: المتصفح يمنع المايكروفون! الرجاء إعطاء الصلاحية.");
-            setTimeout(() => endCallBtn.click(), 3000);
-        } else if (event.error === 'no-speech' && isVoiceModeActive) {
-            startListening();
-        } else {
-            callStatus.textContent = "Error: " + event.error;
-            setTimeout(startListening, 2000);
-        }
-    };
-
-    micBtn.addEventListener('click', () => {
-        if (!currentConfig.apiKey) {
-            alert("الرجاء إدخال مفتاح API في الإعدادات أولاً!");
-            settingsModal.style.display = 'flex';
-            return;
-        }
-        isVoiceModeActive = true;
-        voiceOverlay.style.display = 'flex';
-        speakText("I am ready. Let's talk."); 
-    });
-
-    endCallBtn.addEventListener('click', () => {
-        isVoiceModeActive = false;
-        voiceOverlay.style.display = 'none';
-        recognition.stop();
-        synth.cancel();
-        callAvatar.classList.remove('speaking');
-    });
-
-    function getSystemPrompt() {
-        const lang = currentConfig.chatLanguage;
-        const style = currentConfig.expressionStyle;
-        let basePrompt = `You are a conversational tutor for ${lang}. Keep responses conversational and strictly under 2 sentences to feel like a real voice call. Speak entirely in ${lang}. `;
-        
-        if (style === 'sarcastic') basePrompt += "Mock mistakes ruthlessly before correcting.";
-        else if (style === 'polite') basePrompt += "Encourage and gently correct.";
-        else basePrompt += "Just point out mistakes directly.";
-
-        if (currentConfig.customScript.trim() !== "") basePrompt += `\nSCENARIO: ${currentConfig.customScript}`;
-        return basePrompt;
-    }
-
-    async function fetchAIResponse(userText) {
-        if (!currentConfig.apiKey) {
-            addMessage("خطأ: الرجاء إدخال المفتاح في الإعدادات.", false, true);
-            return;
-        }
-
-        if (isVoiceModeActive) {
-            callStatus.textContent = "Thinking... (يفكر)";
-            callStatus.className = "voice-status";
-        }
-
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${currentConfig.apiKey}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    model: "llama-3.1-8b-instant",
-                    messages: [
-                        { role: "system", content: getSystemPrompt() },
-                        { role: "user", content: userText }
-                    ],
-                    temperature: currentConfig.expressionStyle === 'sarcastic' ? 0.8 : 0.3
-                })
-            });
-
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error?.message || `HTTP Error`);
-            
-            const replyText = data.choices[0].message.content;
-            addMessage(replyText, false);
-            
-            if (isVoiceModeActive) speakText(replyText); 
-
-        } catch (error) {
-            console.error(error);
-            if (isVoiceModeActive) {
-                callStatus.textContent = "Connection error. Restarting mic...";
-                setTimeout(startListening, 2000);
-            } else {
-                addMessage(`خطأ: تأكد من صحة المفتاح.`, false, true);
-            }
-        }
-    }
-
-    function sendMessage() {
-        if (!currentConfig.apiKey) {
-            alert("الرجاء إدخال مفتاح API في الإعدادات أولاً!");
-            settingsModal.style.display = 'flex';
-            return;
-        }
-        const text = userInput.value.trim();
-        if (text === '') return;
-        addMessage(text, true);
-        userInput.value = '';
-        fetchAIResponse(text);
-    }
-
-    sendBtn.addEventListener('click', sendMessage);
-    userInput.addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') sendMessage();
-    });
-</script>
-
+<script src="app.js"></script>
 </body>
-</html>
+                </html>
+                
