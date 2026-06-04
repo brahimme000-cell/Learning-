@@ -28,10 +28,8 @@ let currentConfig = {
 };
 
 function updatePrefsDisplay() {
-    document.getElementById('quick-prefs-display').textContent = `${currentConfig.chatLangLabel} • ${currentConfig.userLevelLabel}`;
-    if (document.getElementById('style-display')) {
-        document.getElementById('style-display').textContent = currentConfig.expressionStyleLabel;
-    }
+    if (document.getElementById('quick-prefs-display')) document.getElementById('quick-prefs-display').textContent = `${currentConfig.chatLangLabel} • ${currentConfig.userLevelLabel}`;
+    if (document.getElementById('style-display')) document.getElementById('style-display').textContent = currentConfig.expressionStyleLabel;
 }
 
 if (document.getElementById('api-key-input')) {
@@ -40,12 +38,9 @@ if (document.getElementById('api-key-input')) {
 }
 updatePrefsDisplay();
 
-// حماية الكود من الانهيار (Defensive Programming)
 function checkStreak() {
     const streakContainer = document.getElementById('streak-container');
     const streakText = document.getElementById('streak-count');
-    
-    // إذا لم يجد العناصر في الـ HTML، يتوقف عن حساب الأيام ويكمل تشغيل التطبيق بأمان
     if (!streakContainer || !streakText) return; 
 
     const today = new Date().toDateString();
@@ -98,9 +93,7 @@ const bottomSheet = document.getElementById('bottom-sheet');
 const sheetTitle = document.getElementById('sheet-title');
 const sheetOptionsContainer = document.getElementById('sheet-options');
 
-if (document.getElementById('close-sheet-btn')) {
-    document.getElementById('close-sheet-btn').addEventListener('click', () => bottomSheet.classList.add('hidden'));
-}
+if (document.getElementById('close-sheet-btn')) document.getElementById('close-sheet-btn').addEventListener('click', () => bottomSheet.classList.add('hidden'));
 
 function openSheet(title, options, currentValue, onSelect) {
     sheetTitle.textContent = title;
@@ -129,14 +122,10 @@ if (document.getElementById('quick-prefs-btn')) {
 
 function openLangSheet() {
     openSheet('اللغة', [
-        { value: 'English', label: '🇺🇸 English' }, 
-        { value: 'French', label: '🇫🇷 Français' },
-        { value: 'Spanish', label: '🇪🇸 Español' }, 
-        { value: 'German', label: '🇩🇪 Deutsch' },
-        { value: 'Arabic', label: '🇸🇦 العربية' },
-        { value: 'Italian', label: '🇮🇹 Italiano' },
-        { value: 'Portuguese', label: '🇵🇹 Português' },
-        { value: 'Turkish', label: '🇹🇷 Türkçe' }
+        { value: 'English', label: '🇺🇸 English' }, { value: 'French', label: '🇫🇷 Français' },
+        { value: 'Spanish', label: '🇪🇸 Español' }, { value: 'German', label: '🇩🇪 Deutsch' },
+        { value: 'Arabic', label: '🇸🇦 العربية' }, { value: 'Italian', label: '🇮🇹 Italiano' },
+        { value: 'Portuguese', label: '🇵🇹 Português' }, { value: 'Turkish', label: '🇹🇷 Türkçe' }
     ], currentConfig.chatLanguage, (sel) => {
         currentConfig.chatLanguage = sel.value; currentConfig.chatLangLabel = sel.label.split(' ')[0];
         localStorage.setItem('chatLang', sel.value); localStorage.setItem('chatLangLabel', currentConfig.chatLangLabel);
@@ -186,6 +175,24 @@ if (document.getElementById('open-scenario-btn')) {
     });
 }
 
+// ميزة إخفاء/إظهار الكلمات
+let isTextVisible = true;
+const toggleTextBtn = document.getElementById('toggle-text-btn');
+const transcriptText = document.getElementById('voice-live-transcript');
+
+if (toggleTextBtn && transcriptText) {
+    toggleTextBtn.addEventListener('click', () => {
+        isTextVisible = !isTextVisible;
+        if(isTextVisible) {
+            transcriptText.classList.remove('blurred');
+            toggleTextBtn.innerHTML = '<i class="fa-solid fa-eye"></i>';
+        } else {
+            transcriptText.classList.add('blurred');
+            toggleTextBtn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+        }
+    });
+}
+
 let isVoiceModeActive = false; 
 let synth = window.speechSynthesis;
 let recognition;
@@ -199,33 +206,38 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
 function startListening() {
     if (!isVoiceModeActive || !recognition) return;
     
-    const langCodes = {
-        'English': 'en-US', 'French': 'fr-FR', 'Spanish': 'es-ES', 'German': 'de-DE', 
-        'Arabic': 'ar-SA', 'Italian': 'it-IT', 'Portuguese': 'pt-PT', 'Turkish': 'tr-TR'
-    };
+    const langCodes = { 'English': 'en-US', 'French': 'fr-FR', 'Spanish': 'es-ES', 'German': 'de-DE', 'Arabic': 'ar-SA', 'Italian': 'it-IT', 'Portuguese': 'pt-PT', 'Turkish': 'tr-TR' };
     recognition.lang = langCodes[currentConfig.chatLanguage] || 'en-US';
     
     document.getElementById('voice-status-text').textContent = "جاري الاستماع...";
     document.getElementById('voice-live-transcript').textContent = "...";
-    document.getElementById('voice-logo').classList.remove('speaking-animation'); 
+    setSpeakingUI(false); 
     try { recognition.start(); } catch(e) {}
+}
+
+// دالة التحكم في الموجات الصوتية
+function setSpeakingUI(isSpeaking) {
+    const logo = document.getElementById('voice-logo');
+    const waves = document.getElementById('audio-waves');
+    if(isSpeaking) {
+        logo.classList.add('hidden');
+        waves.classList.remove('hidden');
+    } else {
+        logo.classList.remove('hidden');
+        waves.classList.add('hidden');
+    }
 }
 
 async function speakText(text) {
     let spokenText = text.split("💡")[0].trim();
-    
-    if (!currentConfig.elevenKey) { 
-        speakTextFree(spokenText); 
-        return; 
-    }
+    if (!currentConfig.elevenKey) { speakTextFree(spokenText); return; }
     
     document.getElementById('voice-status-text').textContent = "يجهز الصوت البشري...";
     document.getElementById('voice-status-text').style.color = "var(--text-light)";
     
     try {
         const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM`, {
-            method: 'POST', 
-            headers: { 'xi-api-key': currentConfig.elevenKey, 'Content-Type': 'application/json' },
+            method: 'POST', headers: { 'xi-api-key': currentConfig.elevenKey, 'Content-Type': 'application/json' },
             body: JSON.stringify({ text: spokenText, model_id: "eleven_multilingual_v2" })
         });
         
@@ -239,40 +251,32 @@ async function speakText(text) {
         currentAudio = new Audio(audioUrl);
         document.getElementById('voice-status-text').textContent = "الذكاء الاصطناعي يتحدث...";
         document.getElementById('voice-live-transcript').textContent = spokenText; 
-        document.getElementById('voice-logo').classList.add('speaking-animation');
+        setSpeakingUI(true); // تفعيل الموجات
         currentAudio.play();
         
         currentAudio.onended = () => { 
-            document.getElementById('voice-logo').classList.remove('speaking-animation'); 
+            setSpeakingUI(false); // إيقاف الموجات
             if (isVoiceModeActive) setTimeout(startListening, 500); 
         };
         
     } catch (e) { 
         console.warn("ElevenLabs failed:", e);
-        
         document.getElementById('voice-status-text').textContent = `خطأ ElevenLabs: ${e.message}`;
         document.getElementById('voice-status-text').style.color = "var(--brand-danger)";
-        
-        setTimeout(() => {
-            document.getElementById('voice-status-text').style.color = "var(--text-light)";
-            speakTextFree(spokenText); 
-        }, 3500);
+        setTimeout(() => { document.getElementById('voice-status-text').style.color = "var(--text-light)"; speakTextFree(spokenText); }, 3500);
     }
 }
 
 function speakTextFree(spokenText) {
     synth.cancel(); const utterance = new SpeechSynthesisUtterance(spokenText);
-    
-    const langCodes = {
-        'English': 'en-US', 'French': 'fr-FR', 'Spanish': 'es-ES', 'German': 'de-DE', 
-        'Arabic': 'ar-SA', 'Italian': 'it-IT', 'Portuguese': 'pt-PT', 'Turkish': 'tr-TR'
-    };
+    const langCodes = { 'English': 'en-US', 'French': 'fr-FR', 'Spanish': 'es-ES', 'German': 'de-DE', 'Arabic': 'ar-SA', 'Italian': 'it-IT', 'Portuguese': 'pt-PT', 'Turkish': 'tr-TR' };
     utterance.lang = langCodes[currentConfig.chatLanguage] || 'en-US';
     
-    document.getElementById('voice-status-text').textContent = "الذكاء الاصطناعي يتحدث (صوت المتصفح)...";
+    document.getElementById('voice-status-text').textContent = "الذكاء الاصطناعي يتحدث...";
     document.getElementById('voice-live-transcript').textContent = spokenText; 
-    document.getElementById('voice-logo').classList.add('speaking-animation');
-    utterance.onend = function() { if (isVoiceModeActive) setTimeout(startListening, 500); };
+    setSpeakingUI(true); // تفعيل الموجات
+    
+    utterance.onend = function() { setSpeakingUI(false); if (isVoiceModeActive) setTimeout(startListening, 500); };
     synth.speak(utterance);
 }
 
@@ -281,55 +285,77 @@ recognition.onresult = function(event) {
     for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript; }
     if (finalTranscript !== '') {
         recognition.stop(); document.getElementById('voice-live-transcript').textContent = finalTranscript;
-        triggerActivity();
-        fetchAIResponse(finalTranscript, true); 
+        triggerActivity(); fetchAIResponse(finalTranscript, true); 
     }
 };
 
 recognition.onerror = function(event) { if (event.error === 'no-speech' && isVoiceModeActive) startListening(); };
 
+// الترحيب الذكي حسب اللغة
 function startVoiceSession() {
     if (!currentConfig.apiKey) { alert("الرجاء إدخال Gemini API Key في الإعدادات!"); switchScreen('settings-screen'); return; }
-    isVoiceModeActive = true; switchScreen('voice-screen'); speakText("Hello! Let's go!");
+    isVoiceModeActive = true; switchScreen('voice-screen'); 
+    
+    const greetings = {
+        'English': "Hello! Let's start the conversation.",
+        'French': "Bonjour ! Commençons la conversation.",
+        'Spanish': "¡Hola! Empecemos la conversación.",
+        'German': "Hallo! Lass uns anfangen.",
+        'Arabic': "أهلاً بك! دعنا نبدأ المحادثة.",
+        'Italian': "Ciao! Iniziamo la conversazione.",
+        'Portuguese': "Olá! Vamos começar.",
+        'Turkish': "Merhaba! Hadi başlayalım."
+    };
+    let initialGreeting = greetings[currentConfig.chatLanguage] || greetings['English'];
+    speakText(initialGreeting);
 }
 
 if (document.getElementById('end-voice-call-btn')) {
     document.getElementById('end-voice-call-btn').addEventListener('click', () => {
-        isVoiceModeActive = false; recognition.stop(); synth.cancel();
-        if(currentAudio) currentAudio.pause();
-        document.getElementById('voice-logo').classList.remove('speaking-animation'); switchScreen('home-screen'); 
+        isVoiceModeActive = false; recognition.stop(); synth.cancel(); setSpeakingUI(false);
+        if(currentAudio) currentAudio.pause(); switchScreen('home-screen'); 
     });
 }
 
 function getSystemPrompt() {
     let levelInstructions = "";
     switch(currentConfig.userLevel) {
-        case 'Beginner': levelInstructions = "Use simple words and basic sentences."; break;
+        case 'Beginner': levelInstructions = "Use very simple words and basic sentences. Speak slowly."; break;
         case 'Intermediate': levelInstructions = "Use common conversational vocabulary."; break;
         case 'Advanced': levelInstructions = "Use advanced vocabulary and natural idioms."; break;
-        case 'Native': levelInstructions = "Use natural local slang, idioms, and normal fast pacing."; break;
+        case 'Native': levelInstructions = "Use natural local slang, fast pacing, and complex idioms. Act like a local resident."; break;
+    }
+
+    // تفعيل صارم لأسلوب المعلم
+    let styleInstruction = "";
+    if (currentConfig.expressionStyle === 'strict') {
+        styleInstruction = "Act as a VERY STRICT, formal, and no-nonsense language tutor. Point out mistakes bluntly.";
+    } else if (currentConfig.expressionStyle === 'sarcastic') {
+        styleInstruction = "Act as a highly SARCASTIC, witty, and funny language partner. Make lighthearted jokes or mock the user playfully. Use humor.";
+    } else {
+        styleInstruction = "Act as a VERY POLITE, encouraging, and friendly language partner. Be extremely supportive.";
     }
 
     let roleplaySetup = "";
     if (currentConfig.userRole && currentConfig.aiRole && currentConfig.scenarioPlace) {
         roleplaySetup = `\nROLEPLAY SCENARIO: We are at [${currentConfig.scenarioPlace}]. The user acts as [${currentConfig.userRole}]. YOU must act strictly as [${currentConfig.aiRole}].
-        DYNAMICS: You must completely embody this character. Match the emotional tone perfectly.`;
+        DYNAMICS: You must completely embody this character. Match the emotional tone perfectly. DO NOT break character.`;
     } else {
-        let styleText = currentConfig.expressionStyle === 'strict' ? "strict and formal tutor." : "polite, encouraging, and friendly language partner.";
-        roleplaySetup = `\nSCENARIO: General guided practice. Act as a ${styleText}`;
+        roleplaySetup = `\nSCENARIO: General conversation.`;
     }
 
-    let basePrompt = `You are a professional language tutor and an exceptional improvisational actor for ${currentConfig.chatLanguage}.
-    Your sole task is to engage the user in a highly realistic conversation. Never break character.
+    let basePrompt = `You are a professional language expert and exceptional improvisational actor for ${currentConfig.chatLanguage}.
+    Your sole task is to engage the user in a highly realistic conversation.
 
     USER LEVEL CONTROL: ${currentConfig.userLevel} (${levelInstructions}).
+    YOUR PERSONALITY: ${styleInstruction}
     ${roleplaySetup}
 
-    STRICT CORRECTION AND ARABIC OUTPUT FORMAT:
-    - Line 1: Your conversational response in character. Keep it strictly to 1-2 sentences max. Speak entirely in ${currentConfig.chatLanguage}.
-    - Line 2 (MUST START WITH A NEWLINE): "💡 الملاحظة: " (In clear, simple Arabic).
-      * CRITICAL: ONLY make a correction if they made an actual grammar or vocabulary mistake in the target language.
-      * If the phrase was correct, just write "تعبير صحيح، تابع!" and do not add any extra text.`;
+    STRICT OUTPUT FORMAT:
+    - Line 1: Your conversational response in character. Keep it to 1-2 sentences max. Speak entirely in ${currentConfig.chatLanguage}.
+    - Line 2 (MUST START WITH A NEWLINE): "💡 الملاحظة: " (In clear Arabic).
+      * CRITICAL: ONLY make a correction if they made an actual grammar or vocabulary mistake.
+      * If the phrase was correct, just write "تعبير صحيح، تابع!" and nothing else.`;
     
     return basePrompt;
 }
@@ -360,9 +386,7 @@ async function fetchAIResponse(userText, isVoiceCall = false) {
             replyText = data.candidates[0].content.parts[0].text;
             success = true;
             break; 
-        } catch (error) {
-            lastError = error.message;
-        }
+        } catch (error) { lastError = error.message; }
     }
 
     if (success) {
@@ -394,9 +418,6 @@ function addChatMessage(text, isUser) {
     const div = document.createElement('div');
     div.className = `message ${isUser ? 'user-msg' : 'bot-msg'}`;
     div.innerHTML = `<div class="msg-content">${text}</div>`;
-    if (chatBox) {
-        chatBox.appendChild(div); 
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-}
-    
+    if (chatBox) { chatBox.appendChild(div); chatBox.scrollTop = chatBox.scrollHeight; }
+            }
+                
