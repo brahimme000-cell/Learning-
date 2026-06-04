@@ -6,7 +6,6 @@ const screens = document.querySelectorAll('.screen');
 const bottomNav = document.querySelector('.bottom-nav');
 
 function switchScreen(targetId) {
-    // إخفاء القائمة السفلية في وضع الصوت لتعطيه مساحة كاملة
     if (targetId === 'voice-screen') {
         bottomNav.classList.add('hidden');
     } else {
@@ -16,7 +15,6 @@ function switchScreen(targetId) {
     navItems.forEach(nav => nav.classList.remove('active'));
     screens.forEach(screen => screen.classList.remove('active'));
     
-    // تفعيل زر القائمة إذا كان مرتبطاً بشاشة من القائمة
     const targetNav = document.querySelector(`[data-target="${targetId}"]`);
     if(targetNav) targetNav.classList.add('active');
     
@@ -280,7 +278,7 @@ function startVoiceSession() {
         return;
     }
     isVoiceModeActive = true;
-    switchScreen('voice-screen'); // الانتقال للشاشة الصوتية المستقلة
+    switchScreen('voice-screen'); 
     speakText("Hello. I am ready.");
 }
 
@@ -289,26 +287,44 @@ guidedPracticeBtn.addEventListener('click', () => {
     startVoiceSession();
 });
 
-// زر إنهاء المكالمة
 endVoiceCallBtn.addEventListener('click', () => {
     isVoiceModeActive = false;
     recognition.stop(); 
     synth.cancel();
     voiceLogo.classList.remove('speaking-animation');
-    switchScreen('home-screen'); // العودة للرئيسية
+    switchScreen('home-screen'); 
 });
 
-// --- AI Prompt & Chat ---
+// --- AI Engine (Strict Level Control) ---
 function getSystemPrompt() {
-    let basePrompt = `You are a strict language tutor for ${currentConfig.chatLanguage}. Your ONLY purpose is to help the user learn this language. 
-    CRITICAL: Refuse any general questions outside language learning. 
-    User level: ${currentConfig.userLevel}. Keep responses short (1-2 sentences). `;
+    let levelInstructions = "";
+    // توجيهات صارمة جداً للذكاء الاصطناعي ليتحدث بناءً على المستوى المختار
+    switch(currentConfig.userLevel) {
+        case 'Beginner': 
+            levelInstructions = "Use extremely simple vocabulary, basic grammar, and short sentences. Speak slowly and clearly. Avoid complex idioms."; 
+            break;
+        case 'Intermediate': 
+            levelInstructions = "Use everyday conversational language, moderate sentence structures, and common phrasal verbs."; 
+            break;
+        case 'Advanced': 
+            levelInstructions = "Use advanced vocabulary, complex grammar, rich idioms, and speak like a well-educated native speaker."; 
+            break;
+        case 'Native': 
+            levelInstructions = "Use natural slang, deep cultural expressions, highly complex idioms, and speak fast and naturally as if talking to a local friend."; 
+            break;
+    }
+
+    let basePrompt = `You are a highly adaptive language tutor for ${currentConfig.chatLanguage}. 
+    CRITICAL: You MUST refuse any general knowledge questions outside of language learning. 
+    User's Level: ${currentConfig.userLevel}. 
+    YOUR SPEAKING STYLE: ${levelInstructions}. 
+    Keep all your responses short (1-2 sentences maximum) to keep the conversation flowing. `;
     
-    if (currentConfig.expressionStyle === 'sarcastic') basePrompt += "Mock mistakes before correcting. ";
+    if (currentConfig.expressionStyle === 'sarcastic') basePrompt += "Mock mistakes ruthlessly before correcting. ";
     else if (currentConfig.expressionStyle === 'polite') basePrompt += "Gently correct mistakes. ";
     
     if (currentConfig.userRole && currentConfig.aiRole && currentConfig.scenarioPlace) {
-        basePrompt += `\nROLEPLAY SCENARIO: Place: ${currentConfig.scenarioPlace}. User is ${currentConfig.userRole}, YOU are ${currentConfig.aiRole}.`;
+        basePrompt += `\nROLEPLAY SCENARIO: Place: ${currentConfig.scenarioPlace}. User is ${currentConfig.userRole}, YOU are ${currentConfig.aiRole}. Stay in character.`;
     }
     return basePrompt;
 }
@@ -370,3 +386,4 @@ sendBtn.addEventListener('click', () => {
         fetchAIResponse(text, false); 
     }
 });
+    
