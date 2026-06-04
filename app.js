@@ -29,14 +29,25 @@ let currentConfig = {
 
 function updatePrefsDisplay() {
     document.getElementById('quick-prefs-display').textContent = `${currentConfig.chatLangLabel} • ${currentConfig.userLevelLabel}`;
-    document.getElementById('style-display').textContent = currentConfig.expressionStyleLabel;
+    if (document.getElementById('style-display')) {
+        document.getElementById('style-display').textContent = currentConfig.expressionStyleLabel;
+    }
 }
 
-document.getElementById('api-key-input').value = currentConfig.apiKey;
-document.getElementById('eleven-key-input').value = currentConfig.elevenKey;
+if (document.getElementById('api-key-input')) {
+    document.getElementById('api-key-input').value = currentConfig.apiKey;
+    document.getElementById('eleven-key-input').value = currentConfig.elevenKey;
+}
 updatePrefsDisplay();
 
+// حماية الكود من الانهيار (Defensive Programming)
 function checkStreak() {
+    const streakContainer = document.getElementById('streak-container');
+    const streakText = document.getElementById('streak-count');
+    
+    // إذا لم يجد العناصر في الـ HTML، يتوقف عن حساب الأيام ويكمل تشغيل التطبيق بأمان
+    if (!streakContainer || !streakText) return; 
+
     const today = new Date().toDateString();
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
@@ -44,9 +55,6 @@ function checkStreak() {
     
     let lastActive = localStorage.getItem('lastActiveDate');
     let streakCount = parseInt(localStorage.getItem('streakCount')) || 0;
-    
-    const streakContainer = document.getElementById('streak-container');
-    const streakText = document.getElementById('streak-count');
 
     if (streakCount === 0) {
         streakContainer.classList.remove('active');
@@ -76,19 +84,23 @@ function triggerActivity() {
 }
 checkStreak(); 
 
-document.getElementById('save-settings-btn').addEventListener('click', () => {
-    currentConfig.apiKey = document.getElementById('api-key-input').value.trim();
-    currentConfig.elevenKey = document.getElementById('eleven-key-input').value.trim();
-    localStorage.setItem('geminiApiKey', currentConfig.apiKey);
-    localStorage.setItem('elevenLabsApiKey', currentConfig.elevenKey);
-    alert('تم حفظ الإعدادات بنجاح!');
-});
+if (document.getElementById('save-settings-btn')) {
+    document.getElementById('save-settings-btn').addEventListener('click', () => {
+        currentConfig.apiKey = document.getElementById('api-key-input').value.trim();
+        currentConfig.elevenKey = document.getElementById('eleven-key-input').value.trim();
+        localStorage.setItem('geminiApiKey', currentConfig.apiKey);
+        localStorage.setItem('elevenLabsApiKey', currentConfig.elevenKey);
+        alert('تم حفظ الإعدادات بنجاح!');
+    });
+}
 
 const bottomSheet = document.getElementById('bottom-sheet');
 const sheetTitle = document.getElementById('sheet-title');
 const sheetOptionsContainer = document.getElementById('sheet-options');
 
-document.getElementById('close-sheet-btn').addEventListener('click', () => bottomSheet.classList.add('hidden'));
+if (document.getElementById('close-sheet-btn')) {
+    document.getElementById('close-sheet-btn').addEventListener('click', () => bottomSheet.classList.add('hidden'));
+}
 
 function openSheet(title, options, currentValue, onSelect) {
     sheetTitle.textContent = title;
@@ -103,15 +115,17 @@ function openSheet(title, options, currentValue, onSelect) {
     bottomSheet.classList.remove('hidden');
 }
 
-document.getElementById('quick-prefs-btn').addEventListener('click', () => {
-    openSheet('الإعدادات السريعة', [
-        { value: 'lang', label: '<i class="fa-solid fa-language"></i> تغيير اللغة' },
-        { value: 'level', label: '<i class="fa-solid fa-layer-group"></i> تغيير المستوى' }
-    ], null, (sel) => {
-        if(sel.value === 'lang') openLangSheet();
-        if(sel.value === 'level') openLevelSheet();
+if (document.getElementById('quick-prefs-btn')) {
+    document.getElementById('quick-prefs-btn').addEventListener('click', () => {
+        openSheet('الإعدادات السريعة', [
+            { value: 'lang', label: '<i class="fa-solid fa-language"></i> تغيير اللغة' },
+            { value: 'level', label: '<i class="fa-solid fa-layer-group"></i> تغيير المستوى' }
+        ], null, (sel) => {
+            if(sel.value === 'lang') openLangSheet();
+            if(sel.value === 'level') openLevelSheet();
+        });
     });
-});
+}
 
 function openLangSheet() {
     openSheet('اللغة', [
@@ -141,32 +155,36 @@ function openLevelSheet() {
     });
 }
 
-document.getElementById('style-selector-btn').addEventListener('click', () => {
-    openSheet('أسلوب المعلم', [
-        { value: 'polite', label: 'مؤدب ومشجع' }, { value: 'sarcastic', label: 'ساخر كوميدي 🤬' }, { value: 'strict', label: 'صارم وجدي' }
-    ], currentConfig.expressionStyle, (sel) => {
-        currentConfig.expressionStyle = sel.value; currentConfig.expressionStyleLabel = sel.label;
-        localStorage.setItem('chatStyle', sel.value); localStorage.setItem('chatStyleLabel', sel.label);
-        updatePrefsDisplay(); bottomSheet.classList.add('hidden');
+if (document.getElementById('style-selector-btn')) {
+    document.getElementById('style-selector-btn').addEventListener('click', () => {
+        openSheet('أسلوب المعلم', [
+            { value: 'polite', label: 'مؤدب ومشجع' }, { value: 'sarcastic', label: 'ساخر كوميدي 🤬' }, { value: 'strict', label: 'صارم وجدي' }
+        ], currentConfig.expressionStyle, (sel) => {
+            currentConfig.expressionStyle = sel.value; currentConfig.expressionStyleLabel = sel.label;
+            localStorage.setItem('chatStyle', sel.value); localStorage.setItem('chatStyleLabel', sel.label);
+            updatePrefsDisplay(); bottomSheet.classList.add('hidden');
+        });
     });
-});
+}
 
 const scenarioModal = document.getElementById('scenario-modal');
-document.getElementById('open-scenario-btn').addEventListener('click', () => scenarioModal.classList.remove('hidden'));
-document.getElementById('close-scenario-btn').addEventListener('click', () => scenarioModal.classList.add('hidden'));
+if (document.getElementById('open-scenario-btn')) {
+    document.getElementById('open-scenario-btn').addEventListener('click', () => scenarioModal.classList.remove('hidden'));
+    document.getElementById('close-scenario-btn').addEventListener('click', () => scenarioModal.classList.add('hidden'));
 
-document.getElementById('start-scenario-btn').addEventListener('click', () => {
-    currentConfig.userRole = document.getElementById('user-role').value.trim();
-    currentConfig.aiRole = document.getElementById('ai-role').value.trim();
-    currentConfig.scenarioPlace = document.getElementById('scenario-place').value.trim();
-    scenarioModal.classList.add('hidden');
-    startVoiceSession();
-});
+    document.getElementById('start-scenario-btn').addEventListener('click', () => {
+        currentConfig.userRole = document.getElementById('user-role').value.trim();
+        currentConfig.aiRole = document.getElementById('ai-role').value.trim();
+        currentConfig.scenarioPlace = document.getElementById('scenario-place').value.trim();
+        scenarioModal.classList.add('hidden');
+        startVoiceSession();
+    });
 
-document.getElementById('guided-practice-btn').addEventListener('click', () => {
-    currentConfig.userRole = ''; currentConfig.aiRole = ''; currentConfig.scenarioPlace = '';
-    startVoiceSession();
-});
+    document.getElementById('guided-practice-btn').addEventListener('click', () => {
+        currentConfig.userRole = ''; currentConfig.aiRole = ''; currentConfig.scenarioPlace = '';
+        startVoiceSession();
+    });
+}
 
 let isVoiceModeActive = false; 
 let synth = window.speechSynthesis;
@@ -193,7 +211,6 @@ function startListening() {
     try { recognition.start(); } catch(e) {}
 }
 
-// نظام كشف الأخطاء المباشر لـ ElevenLabs على شاشة الصوت
 async function speakText(text) {
     let spokenText = text.split("💡")[0].trim();
     
@@ -233,11 +250,9 @@ async function speakText(text) {
     } catch (e) { 
         console.warn("ElevenLabs failed:", e);
         
-        // طباعة رسالة الخطأ بالخط العريض والأحمر في شاشة الصوت
         document.getElementById('voice-status-text').textContent = `خطأ ElevenLabs: ${e.message}`;
         document.getElementById('voice-status-text').style.color = "var(--brand-danger)";
         
-        // الانتظار 3 ثواني لتتمكن من قراءة الخطأ، ثم تشغيل صوت كروم
         setTimeout(() => {
             document.getElementById('voice-status-text').style.color = "var(--text-light)";
             speakTextFree(spokenText); 
@@ -278,11 +293,13 @@ function startVoiceSession() {
     isVoiceModeActive = true; switchScreen('voice-screen'); speakText("Hello! Let's go!");
 }
 
-document.getElementById('end-voice-call-btn').addEventListener('click', () => {
-    isVoiceModeActive = false; recognition.stop(); synth.cancel();
-    if(currentAudio) currentAudio.pause();
-    document.getElementById('voice-logo').classList.remove('speaking-animation'); switchScreen('home-screen'); 
-});
+if (document.getElementById('end-voice-call-btn')) {
+    document.getElementById('end-voice-call-btn').addEventListener('click', () => {
+        isVoiceModeActive = false; recognition.stop(); synth.cancel();
+        if(currentAudio) currentAudio.pause();
+        document.getElementById('voice-logo').classList.remove('speaking-animation'); switchScreen('home-screen'); 
+    });
+}
 
 function getSystemPrompt() {
     let levelInstructions = "";
@@ -363,18 +380,23 @@ async function fetchAIResponse(userText, isVoiceCall = false) {
 
 const chatBox = document.getElementById('chat-box');
 const userInput = document.getElementById('user-input');
-document.getElementById('send-btn').addEventListener('click', () => {
-    const text = userInput.value.trim();
-    if (text) { 
-        if (!currentConfig.apiKey) { alert("الرجاء إدخال Gemini API Key!"); return; }
-        userInput.value = ''; fetchAIResponse(text, false); 
-    }
-});
+if (document.getElementById('send-btn')) {
+    document.getElementById('send-btn').addEventListener('click', () => {
+        const text = userInput.value.trim();
+        if (text) { 
+            if (!currentConfig.apiKey) { alert("الرجاء إدخال Gemini API Key!"); return; }
+            userInput.value = ''; fetchAIResponse(text, false); 
+        }
+    });
+}
 
 function addChatMessage(text, isUser) {
     const div = document.createElement('div');
     div.className = `message ${isUser ? 'user-msg' : 'bot-msg'}`;
     div.innerHTML = `<div class="msg-content">${text}</div>`;
-    chatBox.appendChild(div); chatBox.scrollTop = chatBox.scrollHeight;
-                                                                   }
+    if (chatBox) {
+        chatBox.appendChild(div); 
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+}
     
