@@ -1,6 +1,3 @@
-const API_URL = "https://api.groq.com/openai/v1/chat/completions";
-
-// Navigation
 const navItems = document.querySelectorAll('.nav-item');
 const screens = document.querySelectorAll('.screen');
 const bottomNav = document.querySelector('.bottom-nav');
@@ -25,9 +22,9 @@ navItems.forEach(item => {
     item.addEventListener('click', () => switchScreen(item.dataset.target));
 });
 
-// State
 let currentConfig = { 
-    apiKey: localStorage.getItem('groqApiKey') || '',
+    apiKey: localStorage.getItem('geminiApiKey') || '',
+    elevenKey: localStorage.getItem('elevenLabsApiKey') || '',
     chatLanguage: localStorage.getItem('chatLang') || 'English',
     chatLangLabel: localStorage.getItem('chatLangLabel') || '🇺🇸',
     expressionStyle: localStorage.getItem('chatStyle') || 'polite',
@@ -43,9 +40,9 @@ function updatePrefsDisplay() {
 }
 
 document.getElementById('api-key-input').value = currentConfig.apiKey;
+document.getElementById('eleven-key-input').value = currentConfig.elevenKey;
 updatePrefsDisplay();
 
-// --- نظام الشعلة ---
 function checkStreak() {
     const today = new Date().toDateString();
     const yesterday = new Date();
@@ -88,19 +85,18 @@ checkStreak();
 
 document.getElementById('save-settings-btn').addEventListener('click', () => {
     currentConfig.apiKey = document.getElementById('api-key-input').value.trim();
-    localStorage.setItem('groqApiKey', currentConfig.apiKey);
+    currentConfig.elevenKey = document.getElementById('eleven-key-input').value.trim();
+    localStorage.setItem('geminiApiKey', currentConfig.apiKey);
+    localStorage.setItem('elevenLabsApiKey', currentConfig.elevenKey);
     alert('تم حفظ الإعدادات بنجاح!');
 });
 
-// --- Bottom Sheet Logic ---
 const bottomSheet = document.getElementById('bottom-sheet');
 const sheetTitle = document.getElementById('sheet-title');
 const sheetOptionsContainer = document.getElementById('sheet-options');
 const backSheetBtn = document.getElementById('back-sheet-btn');
 
-document.getElementById('close-sheet-btn').addEventListener('click', () => {
-    bottomSheet.classList.add('hidden');
-});
+document.getElementById('close-sheet-btn').addEventListener('click', () => bottomSheet.classList.add('hidden'));
 
 function openSheet(title, options, currentValue, onSelect, goBackCallback = null) {
     sheetTitle.textContent = title;
@@ -193,7 +189,6 @@ document.getElementById('style-selector-btn').addEventListener('click', () => {
     });
 });
 
-// --- Scenario Modal ---
 const scenarioModal = document.getElementById('scenario-modal');
 document.getElementById('open-scenario-btn').addEventListener('click', () => scenarioModal.classList.remove('hidden'));
 document.getElementById('close-scenario-btn').addEventListener('click', () => scenarioModal.classList.add('hidden'));
@@ -206,16 +201,10 @@ document.getElementById('start-scenario-btn').addEventListener('click', () => {
     startVoiceSession();
 });
 
-// --- Dedicated Voice Screen Logic ---
-const guidedPracticeBtn = document.getElementById('guided-practice-btn');
-const endVoiceCallBtn = document.getElementById('end-voice-call-btn');
-const voiceStatusText = document.getElementById('voice-status-text');
-const voiceLiveTranscript = document.getElementById('voice-live-transcript');
-const voiceLogo = document.getElementById('voice-logo');
-
 let isVoiceModeActive = false; 
 let synth = window.speechSynthesis;
 let recognition;
+let currentAudio = null;
 
 if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -232,23 +221,69 @@ function getSpeechLangCode() {
 function startListening() {
     if (!isVoiceModeActive || !recognition) return;
     recognition.lang = getSpeechLangCode();
-    voiceStatusText.textContent = "جاري الاستماع...";
-    voiceLiveTranscript.textContent = "...";
-    voiceLogo.classList.remove('speaking-animation'); 
+    document.getElementById('voice-status-text').textContent = "جاري الاستماع...";
+    document.getElementById('voice-live-transcript').textContent = "...";
+    document.getElementById('voice-logo').classList.remove('speaking-animation'); 
     try { recognition.start(); } catch(e) {}
 }
 
-function speakText(text) {
-    if (!synth) return;
-    synth.cancel(); 
+async function speakText(text) {
+    let spokenText = text.split("💡")[0].trim();
     
-    let spokenText = text.split("💡")[0]; 
+    if (!currentConfig.elevenKey) {
+        speakTextFree(spokenText);
+        return;
+    }
+
+    document.getElementById('voice-status-text').textContent = "يجهز الصوت البشري...";
+    
+    try {
+        const voiceId = "21m00Tcm4TlvDq8ikWAM"; 
+        const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+            method: 'POST',
+            headers: {
+                'xi-api-key': currentConfig.elevenKey,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                text: spokenText,
+                model_id: "eleven_multilingual_v2" 
+            })
+        });
+
+        if (!response.ok) throw new Error("ElevenLabs API Error");
+
+        const blob = await response.blob();
+        const audioUrl = URL.createObjectURL(blob);
+        
+        if (currentAudio) currentAudio.pause();
+        currentAudio = new Audio(audioUrl);
+        
+        document.getElementById('voice-status-text').textContent = "الذكاء الاصطناعي يتحدث...";
+        document.getElementById('voice-live-transcript').textContent = spokenText; 
+        document.getElementById('voice-logo').classList.add('speaking-animation');
+
+        currentAudio.play();
+        
+        currentAudio.onended = () => {
+            document.getElementById('voice-logo').classList.remove('speaking-animation');
+            if (isVoiceModeActive) setTimeout(startListening, 500);
+        };
+
+    } catch (error) {
+        console.warn("ElevenLabs failed, falling back to free voice.", error);
+        speakTextFree(spokenText);
+    }
+}
+
+function speakTextFree(spokenText) {
+    synth.cancel(); 
     const utterance = new SpeechSynthesisUtterance(spokenText);
     utterance.lang = getSpeechLangCode();
     
-    voiceStatusText.textContent = "الذكاء الاصطناعي يتحدث...";
-    voiceLiveTranscript.textContent = spokenText; 
-    voiceLogo.classList.add('speaking-animation');
+    document.getElementById('voice-status-text').textContent = "الذكاء الاصطناعي يتحدث...";
+    document.getElementById('voice-live-transcript').textContent = spokenText; 
+    document.getElementById('voice-logo').classList.add('speaking-animation');
 
     utterance.onend = function() {
         if (isVoiceModeActive) setTimeout(startListening, 500); 
@@ -263,7 +298,7 @@ recognition.onresult = function(event) {
     }
     if (finalTranscript !== '') {
         recognition.stop();
-        voiceLiveTranscript.textContent = finalTranscript;
+        document.getElementById('voice-live-transcript').textContent = finalTranscript;
         triggerActivity(); 
         fetchAIResponse(finalTranscript, true); 
     }
@@ -275,68 +310,58 @@ recognition.onerror = function(event) {
 
 function startVoiceSession() {
     if (!currentConfig.apiKey) {
-        alert("الرجاء إدخال API Key في الإعدادات!");
+        alert("الرجاء إدخال Gemini API Key في الإعدادات!");
         switchScreen('settings-screen');
         return;
     }
     isVoiceModeActive = true;
     switchScreen('voice-screen'); 
-    speakText("Hello! I am so ready for this. Let's go!"); // بداية حماسية
+    speakText("Hello! I am ready. Let's go!");
 }
 
-guidedPracticeBtn.addEventListener('click', () => {
+document.getElementById('guided-practice-btn').addEventListener('click', () => {
     currentConfig.userRole = ''; currentConfig.aiRole = ''; currentConfig.scenarioPlace = '';
     startVoiceSession();
 });
 
-endVoiceCallBtn.addEventListener('click', () => {
+document.getElementById('end-voice-call-btn').addEventListener('click', () => {
     isVoiceModeActive = false;
     recognition.stop(); 
     synth.cancel();
-    voiceLogo.classList.remove('speaking-animation');
+    if(currentAudio) currentAudio.pause();
+    document.getElementById('voice-logo').classList.remove('speaking-animation');
     switchScreen('home-screen'); 
 });
 
-// --- Pingo-Style Acting Engine (المحرك المحدث لتمثيل هوليوودي) ---
 function getSystemPrompt() {
     let levelInstructions = "";
     switch(currentConfig.userLevel) {
-        case 'Beginner': levelInstructions = "Use very simple words but keep the energy HIGH!"; break;
-        case 'Intermediate': levelInstructions = "Use conversational daily words."; break;
-        case 'Advanced': levelInstructions = "Use cool idioms and advanced expressions."; break;
-        case 'Native': levelInstructions = "Use heavy local slang and talk fast like a native."; break;
+        case 'Beginner': levelInstructions = "Use simple words and basic sentences."; break;
+        case 'Intermediate': levelInstructions = "Use common conversational vocabulary."; break;
+        case 'Advanced': levelInstructions = "Use advanced vocabulary and natural idioms."; break;
+        case 'Native': levelInstructions = "Use natural local slang, idioms, and normal fast pacing."; break;
     }
 
     let roleplaySetup = "";
     if (currentConfig.userRole && currentConfig.aiRole && currentConfig.scenarioPlace) {
-        roleplaySetup = `\n[SCENARIO ACTING INSTRUCTIONS]
-        Location: ${currentConfig.scenarioPlace}. 
-        User is: ${currentConfig.userRole}. 
-        YOU ARE: ${currentConfig.aiRole}.
-        
-        CRITICAL: YOU ARE AN ACTOR. Fully embrace your role. 
-        - If your role is a "crazy friend", be loud, use "Haha!", "Omg!", "Bro!".
-        - If your role is a "strict teacher", be cold, sigh ("*sigh*"), and act disappointed.
-        SHOW EMOTION IN TEXT! Use exclamation marks, capitalization, and emotional fillers (wow, oh, haha, hmm).`;
+        roleplaySetup = `\nROLEPLAY SCENARIO: We are at [${currentConfig.scenarioPlace}]. The user acts as [${currentConfig.userRole}]. YOU must act strictly as [${currentConfig.aiRole}].
+        DYNAMICS: You must completely embody this character. Match the emotional tone perfectly.`;
     } else {
-        roleplaySetup = `\n[SCENARIO ACTING INSTRUCTIONS]
-        You are a highly energetic, fun, and extremely enthusiastic native language partner. 
-        Always sound excited to talk to the user. Use phrases like "Oh wow!", "Haha, exactly!", "Tell me more!".`;
+        let styleText = currentConfig.expressionStyle === 'strict' ? "strict and formal tutor." : "polite, encouraging, and friendly language partner.";
+        roleplaySetup = `\nSCENARIO: General guided practice. Act as a ${styleText}`;
     }
 
-    let basePrompt = `You are NO LONGER an AI. You are a human actor and language partner for ${currentConfig.chatLanguage}.
-    
+    let basePrompt = `You are a professional language tutor and an exceptional improvisational actor for ${currentConfig.chatLanguage}.
+    Your sole task is to engage the user in a highly realistic conversation. Never break character.
+
+    USER LEVEL CONTROL: ${currentConfig.userLevel} (${levelInstructions}).
     ${roleplaySetup}
-    USER LEVEL: ${currentConfig.userLevel} (${levelInstructions}).
 
-    [OUTPUT FORMAT RULES - STRICT]
-    1. First line: Your dialogue in character. Keep it short, punchy, and highly expressive (1-2 sentences). 
-    2. Second line (Optional, ONLY if the user made a big language mistake. MUST start with new line): "💡 الملاحظة: [Short Arabic correction]". 
-    Do NOT correct minor things. Do NOT explain grammar deeply. Just fix the error simply. If no error, DO NOT output the "💡 الملاحظة" line.
-
-    Example of the vibe I want:
-    "Oh hey! Look who's finally here! Ready for some giggles and total madness? Haha!"
-    `;
+    STRICT CORRECTION AND ARABIC OUTPUT FORMAT:
+    - Line 1: Your conversational response in character. Keep it strictly to 1-2 sentences max. Speak entirely in ${currentConfig.chatLanguage}.
+    - Line 2 (MUST START WITH A NEWLINE): "💡 الملاحظة: " (In clear, simple Arabic).
+      * CRITICAL: ONLY make a correction if they made an actual grammar or vocabulary mistake in the target language.
+      * If the phrase was correct, just write "تعبير صحيح، تابع!" and do not add any extra text.`;
     
     return basePrompt;
 }
@@ -345,36 +370,39 @@ async function fetchAIResponse(userText, isVoiceCall = false) {
     if (!currentConfig.apiKey) return;
     
     if (!isVoiceCall) addChatMessage(userText, true);
-    else voiceStatusText.textContent = "يفكر...";
+    else document.getElementById('voice-status-text').textContent = "يفكر...";
 
     try {
-        const response = await fetch(API_URL, {
+        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${currentConfig.apiKey}`;
+        
+        const response = await fetch(GEMINI_URL, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${currentConfig.apiKey}`, 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                model: "llama-3.1-8b-instant",
-                messages: [
-                    { role: "system", content: getSystemPrompt() },
-                    { role: "user", content: userText }
-                ],
-                temperature: 0.85 // حرارة عالية جداً لزيادة الإبداع والمشاعر في الردود
+                system_instruction: { parts: { text: getSystemPrompt() } },
+                contents: [{ parts: [{ text: userText }] }],
+                generationConfig: { temperature: 0.7 }
             })
         });
+        
         const data = await response.json();
-        const replyText = data.choices[0].message.content;
+        
+        if (!response.ok) throw new Error("Gemini API Error");
+        
+        const replyText = data.candidates[0].content.parts[0].text;
         
         addChatMessage(replyText, false); 
         if (isVoiceCall) speakText(replyText); 
         
     } catch (error) {
+        console.error(error);
         if (isVoiceCall) {
-            voiceStatusText.textContent = "خطأ في الاتصال";
+            document.getElementById('voice-status-text').textContent = "خطأ في الاتصال";
             setTimeout(startListening, 2000);
         }
     }
 }
 
-// Text Chat Logic
 const chatBox = document.getElementById('chat-box');
 const userInput = document.getElementById('user-input');
 const sendBtn = document.getElementById('send-btn');
@@ -391,7 +419,7 @@ sendBtn.addEventListener('click', () => {
     const text = userInput.value.trim();
     if (text) { 
         if (!currentConfig.apiKey) {
-            alert("الرجاء إدخال API Key في الإعدادات!");
+            alert("الرجاء إدخال Gemini API Key في الإعدادات!");
             switchScreen('settings-screen');
             return;
         }
