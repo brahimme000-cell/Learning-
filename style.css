@@ -20,7 +20,12 @@ body { background-color: #000; display: flex; justify-content: center; height: 1
 .screen.active { display: flex; animation: fadeIn 0.3s ease; }
 
 .top-bar { padding: 20px; display: flex; justify-content: space-between; align-items: center; gap: 10px;}
-.streak-badge { background: var(--bg-gray); padding: 8px 15px; border-radius: 12px; border: 1px solid var(--border-color); color: var(--text-light); font-weight: bold; display: flex; align-items: center; gap: 6px;}
+.streak-badge { background: var(--bg-gray); padding: 8px 15px; border-radius: 12px; border: 1px solid var(--border-color); color: var(--text-light); font-weight: bold; display: flex; align-items: center; gap: 6px; transition: 0.3s;}
+/* إضاءة زر الستريك عند النشاط */
+.streak-badge.active { border-color: #FF9800; background: rgba(255, 152, 0, 0.1);}
+.streak-badge.active i { color: #FF9800; animation: twinkle 1s infinite alternate; }
+.streak-badge.active span { color: #FFF; font-weight: 900;}
+
 .top-select-btn { background: var(--bg-gray); color: var(--text-dark); border: 1px solid var(--border-color); padding: 10px 15px; border-radius: 12px; outline: none; font-weight: bold; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 10px; }
 .custom-select-btn { background: var(--bg-gray); color: var(--text-dark); border: 1px solid var(--border-color); padding: 15px; border-radius: 12px; font-weight: bold; font-size: 0.95rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; width: 100%; }
 
@@ -37,24 +42,20 @@ body { background-color: #000; display: flex; justify-content: center; height: 1
 .voice-mode-screen { background: #0A0A0A; padding-bottom: 0; }
 .voice-header { padding: 20px; text-align: center; color: var(--text-dark); font-weight: bold; font-size: 1.1rem; border-bottom: 1px solid #1A1A1A;}
 .voice-center { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 30px; }
-.voice-large-logo .page-left, .voice-large-logo .page-right { width: 60px; height: 80px; font-size: 2.5rem; }
-.voice-large-logo .logo-sparkle { font-size: 2.5rem; }
 
-/* ترددات الصوت الجديدة */
+/* ترددات الصوت الذكية الدائمة */
 .audio-waves { display: flex; align-items: center; gap: 6px; height: 80px; margin-bottom: 40px; justify-content: center;}
-.audio-waves.hidden { display: none !important; }
-.audio-waves .bar { width: 8px; background: var(--brand-primary); border-radius: 10px; animation: soundWave 0.8s infinite ease-in-out alternate; }
-.audio-waves .bar:nth-child(1) { height: 20px; animation-delay: 0.1s; }
-.audio-waves .bar:nth-child(2) { height: 50px; animation-delay: 0.3s; }
-.audio-waves .bar:nth-child(3) { height: 80px; animation-delay: 0.0s; background: var(--text-dark); }
-.audio-waves .bar:nth-child(4) { height: 50px; animation-delay: 0.4s; }
-.audio-waves .bar:nth-child(5) { height: 20px; animation-delay: 0.2s; }
+.audio-waves .bar { width: 8px; background: var(--text-light); border-radius: 10px; height: 10px; transition: 0.3s; opacity: 0.4;}
+.audio-waves.speaking .bar { background: var(--brand-primary); opacity: 1; animation: soundWave 0.8s infinite ease-in-out alternate; }
+.audio-waves.speaking .bar:nth-child(1) { height: 20px; animation-delay: 0.1s; }
+.audio-waves.speaking .bar:nth-child(2) { height: 50px; animation-delay: 0.3s; }
+.audio-waves.speaking .bar:nth-child(3) { height: 80px; animation-delay: 0.0s; background: var(--text-dark); }
+.audio-waves.speaking .bar:nth-child(4) { height: 50px; animation-delay: 0.4s; }
+.audio-waves.speaking .bar:nth-child(5) { height: 20px; animation-delay: 0.2s; }
 @keyframes soundWave { 0% { height: 10px; } 100% { height: 80px; } }
 
 #voice-status-text { margin-top: 10px; margin-bottom: 15px; font-size: 1.2rem; color: var(--text-light); }
 .transcript-text { font-weight: 800; color: var(--brand-primary); font-size: 1.4rem; min-height: 40px; line-height: 1.4; transition: 0.3s;}
-
-/* فئة إخفاء النص (الضبابية) */
 .transcript-text.blurred { filter: blur(10px); opacity: 0.3; user-select: none; pointer-events: none;}
 
 .voice-footer { padding: 30px; display: flex; justify-content: center; align-items: center; background: linear-gradient(transparent, #000); }
@@ -109,4 +110,4 @@ body { background-color: #000; display: flex; justify-content: center; height: 1
 .nav-item.active { color: var(--brand-primary); }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-               
+                   
