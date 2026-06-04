@@ -3,89 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Tutor - Gemini & ElevenLabs</title>
+    <title>AI Tutor - Ultimate Edition</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
 <div id="app-container">
-    
     <main id="home-screen" class="screen active">
         <div class="top-bar">
-            <div class="streak-badge" id="streak-container" title="أيام النشاط">
-                <i class="fa-solid fa-fire" id="streak-icon"></i> 
-                <span id="streak-count">0</span>
-            </div>
-            
-            <button id="quick-prefs-btn" class="top-select-btn">
-                <span id="quick-prefs-display">🇺🇸 English • متوسط</span>
-                <i class="fa-solid fa-chevron-down"></i>
-            </button>
+            <div class="streak-badge"><i class="fa-solid fa-fire"></i><span>1</span></div>
+            <button id="quick-prefs-btn" class="top-select-btn"><span id="quick-prefs-display">🇺🇸 English • متوسط</span><i class="fa-solid fa-chevron-down"></i></button>
         </div>
-        
         <div class="center-content">
             <div class="custom-book-logo" id="main-logo">
                 <i class="fa-solid fa-sparkles logo-sparkle"></i>
-                <div class="book-pages">
-                    <div class="page-left">A</div>
-                    <div class="page-right">أ</div>
-                </div>
+                <div class="book-pages"><div class="page-left">A</div><div class="page-right">أ</div></div>
             </div>
-            
             <h2 id="greeting-text">جاهز للتدريب؟</h2>
-            
-            <div class="action-buttons-container" id="home-actions">
-                <button id="guided-practice-btn" class="primary-btn">
-                    <i class="fa-solid fa-map-location-dot"></i> ممارسة منهجية
-                </button>
-                <button id="open-scenario-btn" class="secondary-btn">
-                    <i class="fa-solid fa-masks-theater"></i> إنشاء محادثة (سيناريو)
-                </button>
+            <div class="action-buttons-container">
+                <button id="guided-practice-btn" class="primary-btn"><i class="fa-solid fa-map-location-dot"></i> ممارسة منهجية</button>
+                <button id="open-scenario-btn" class="secondary-btn"><i class="fa-solid fa-masks-theater"></i> إنشاء محادثة (سيناريو)</button>
             </div>
         </div>
     </main>
 
     <main id="voice-screen" class="screen voice-mode-screen">
-        <div class="voice-header">
-            <span>محادثة صوتية مباشرة</span>
-        </div>
-        
+        <div class="voice-header"><span>محادثة صوتية مباشرة</span></div>
         <div class="voice-center">
             <div class="custom-book-logo voice-large-logo" id="voice-logo">
                 <i class="fa-solid fa-sparkles logo-sparkle"></i>
-                <div class="book-pages">
-                    <div class="page-left">A</div>
-                    <div class="page-right">أ</div>
-                </div>
+                <div class="book-pages"><div class="page-left">A</div><div class="page-right">أ</div></div>
             </div>
-            
             <h3 id="voice-status-text">جاري الاستماع...</h3>
             <p id="voice-live-transcript" class="transcript-text">...</p>
         </div>
-        
         <div class="voice-footer">
-            <button id="end-voice-call-btn" class="danger-btn round-btn">
-                <i class="fa-solid fa-phone-slash"></i>
-            </button>
+            <button id="end-voice-call-btn" class="danger-btn round-btn"><i class="fa-solid fa-phone-slash"></i></button>
         </div>
     </main>
 
     <div id="scenario-modal" class="modal hidden">
         <div class="modal-content">
             <h3 class="modal-title">تخصيص المحادثة</h3>
-            <div class="setting-card">
-                <label>دورك (من أنت؟)</label>
-                <input type="text" id="user-role" placeholder="مثال: زبون، سائح...">
-            </div>
-            <div class="setting-card">
-                <label>دور المعلم (من أنا؟)</label>
-                <input type="text" id="ai-role" placeholder="مثال: نادل، ضابط الجوازات...">
-            </div>
-            <div class="setting-card">
-                <label>المكان / الموقف</label>
-                <input type="text" id="scenario-place" placeholder="مثال: في مطعم إيطالي...">
-            </div>
+            <div class="setting-card"><label>دورك (من أنت؟)</label><input type="text" id="user-role" placeholder="مثال: زبون"></div>
+            <div class="setting-card"><label>دور المعلم (من أنا؟)</label><input type="text" id="ai-role" placeholder="مثال: نادل"></div>
+            <div class="setting-card"><label>المكان / الموقف</label><input type="text" id="scenario-place" placeholder="مثال: مطعم إيطالي"></div>
             <div class="modal-actions">
                 <button id="close-scenario-btn" class="text-btn">إلغاء</button>
                 <button id="start-scenario-btn" class="primary-btn small-btn">ابدأ المحادثة</button>
@@ -95,9 +58,7 @@
 
     <main id="chat-screen" class="screen">
         <div class="chat-header">Text Chat</div>
-        <div id="chat-box">
-            <div class="message bot-msg"><div class="msg-content">أهلاً بك! أنا أستاذك الافتراضي. كيف يمكنني مساعدتك؟</div></div>
-        </div>
+        <div id="chat-box"><div class="message bot-msg"><div class="msg-content">أهلاً بك! أنا أستاذك الافتراضي. كيف يمكنني مساعدتك؟</div></div></div>
         <div id="input-area">
             <input type="text" id="user-input" placeholder="Type a message...">
             <button id="send-btn" class="send-btn"><i class="fa-solid fa-paper-plane"></i></button>
@@ -107,37 +68,21 @@
     <main id="settings-screen" class="screen">
         <div class="settings-header">الإعدادات العامة</div>
         <div class="settings-list">
+            <div class="setting-card"><label><i class="fa-solid fa-brain"></i> Gemini API Key</label><input type="password" id="api-key-input" placeholder="AIzaSy... أو AQ..."></div>
+            <div class="setting-card"><label><i class="fa-solid fa-microphone-lines"></i> ElevenLabs API Key</label><input type="password" id="eleven-key-input" placeholder="sk_..."></div>
             <div class="setting-card">
-                <label><i class="fa-solid fa-brain"></i> Gemini API Key (مطلوب)</label>
-                <input type="password" id="api-key-input" placeholder="AIzaSy...">
+                <label><i class="fa-solid fa-masks-theater"></i> أسلوب المعلم</label>
+                <button id="style-selector-btn" class="custom-select-btn"><span id="style-display">مؤدب ومشجع</span><i class="fa-solid fa-chevron-down"></i></button>
             </div>
-            <div class="setting-card">
-                <label><i class="fa-solid fa-microphone-lines"></i> ElevenLabs API Key (اختياري للصوت البشري)</label>
-                <input type="password" id="eleven-key-input" placeholder="sk_...">
-            </div>
-            <div class="setting-card">
-                <label><i class="fa-solid fa-masks-theater"></i> أسلوب المعلم / قساوة التصحيح</label>
-                <button id="style-selector-btn" class="custom-select-btn full-width">
-                    <span id="style-display">مؤدب ومشجع</span>
-                    <i class="fa-solid fa-chevron-down"></i>
-                </button>
-            </div>
-            <button id="save-settings-btn" class="primary-btn" style="margin-top: 10px;">حفظ الإعدادات</button>
+            <button id="save-settings-btn" class="primary-btn">حفظ الإعدادات</button>
         </div>
     </main>
 
     <nav class="bottom-nav">
-        <button class="nav-item active" data-target="home-screen">
-            <i class="fa-solid fa-microphone"></i><span>Speak</span>
-        </button>
-        <button class="nav-item" data-target="chat-screen">
-            <i class="fa-solid fa-message"></i><span>Chat</span>
-        </button>
-        <button class="nav-item" data-target="settings-screen">
-            <i class="fa-solid fa-gear"></i><span>Settings</span>
-        </button>
+        <button class="nav-item active" data-target="home-screen"><i class="fa-solid fa-microphone"></i><span>Speak</span></button>
+        <button class="nav-item" data-target="chat-screen"><i class="fa-solid fa-message"></i><span>Chat</span></button>
+        <button class="nav-item" data-target="settings-screen"><i class="fa-solid fa-gear"></i><span>Settings</span></button>
     </nav>
-
     <div id="bottom-sheet" class="sheet-overlay hidden">
         <div class="sheet-content">
             <div class="sheet-header">
@@ -152,5 +97,5 @@
 
 <script src="app.js"></script>
 </body>
-                </html>
-                
+    </html>
+    
