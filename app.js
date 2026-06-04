@@ -366,7 +366,7 @@ function getSystemPrompt() {
     return basePrompt;
 }
 
-// الاتصال المحدث بخوادم Gemini (تصحيح هيكل الطلب)
+// التحديث الجذري للاتصال بخوادم جوجل
 async function fetchAIResponse(userText, isVoiceCall = false) {
     if (!currentConfig.apiKey) return;
     
@@ -380,7 +380,7 @@ async function fetchAIResponse(userText, isVoiceCall = false) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                systemInstruction: {
+                system_instruction: {  // تم تصحيح هذا السطر ليقبله خادم جوجل
                     parts: [{ text: getSystemPrompt() }]
                 },
                 contents: [{
@@ -393,10 +393,11 @@ async function fetchAIResponse(userText, isVoiceCall = false) {
         
         const data = await response.json();
         
-        // كشف الأخطاء وإبلاغ المستخدم مباشرة
+        // نظام كشف الأخطاء الدقيق
         if (!response.ok) {
             console.error("Gemini API Error:", data);
-            throw new Error(data.error?.message || "خطأ في الاتصال بالخادم");
+            const exactError = data.error?.message || "خطأ مجهول من الخادم";
+            throw new Error(exactError);
         }
         
         const replyText = data.candidates[0].content.parts[0].text;
@@ -406,11 +407,13 @@ async function fetchAIResponse(userText, isVoiceCall = false) {
         
     } catch (error) {
         console.error(error);
+        const errorMsg = `⚠️ رسالة الخطأ من جوجل: ${error.message}`; // سيطبع الخطأ الحقيقي
+        
         if (isVoiceCall) {
-            document.getElementById('voice-status-text').textContent = "خطأ في الاتصال (تأكد من الـ API Key)";
+            document.getElementById('voice-status-text').textContent = "خطأ في الاتصال";
             setTimeout(startListening, 3000);
         } else {
-            addChatMessage("⚠️ عذراً، خطأ في الاتصال. تأكد أن الـ API Key صحيح ولا توجد به مسافات فارغة.", false);
+            addChatMessage(errorMsg, false);
         }
     }
 }
@@ -440,4 +443,4 @@ sendBtn.addEventListener('click', () => {
         fetchAIResponse(text, false); 
     }
 });
-                                                            
+        
