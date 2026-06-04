@@ -1,23 +1,24 @@
+// تأمين الكود بالكامل لتفادي أي انهيار (Defensive Programming)
 const navItems = document.querySelectorAll('.nav-item');
 const screens = document.querySelectorAll('.screen');
 const bottomNav = document.querySelector('.bottom-nav');
 
+// إخفاء اللوجو بالقوة
+const voiceLogo = document.getElementById('voice-logo');
+if (voiceLogo) voiceLogo.style.display = 'none';
+
 function switchScreen(targetId) {
-    if (targetId === 'voice-screen') bottomNav.classList.add('hidden');
-    else bottomNav.classList.remove('hidden');
+    if (targetId === 'voice-screen') bottomNav?.classList.add('hidden');
+    else bottomNav?.classList.remove('hidden');
 
-    navItems.forEach(nav => nav.classList.remove('active'));
-    screens.forEach(screen => screen.classList.remove('active'));
-    const targetNav = document.querySelector(`[data-target="${targetId}"]`);
-    if(targetNav) targetNav.classList.add('active');
+    navItems?.forEach(nav => nav.classList.remove('active'));
+    screens?.forEach(screen => screen.classList.remove('active'));
     
-    const targetElement = document.getElementById(targetId);
-    if(targetElement) targetElement.classList.add('active');
+    document.querySelector(`[data-target="${targetId}"]`)?.classList.add('active');
+    document.getElementById(targetId)?.classList.add('active');
 }
 
-if(navItems) {
-    navItems.forEach(item => item.addEventListener('click', () => switchScreen(item.dataset.target)));
-}
+navItems?.forEach(item => item.addEventListener('click', () => switchScreen(item.dataset.target)));
 
 let currentConfig = { 
     apiKey: localStorage.getItem('geminiApiKey') || '',
@@ -32,14 +33,17 @@ let currentConfig = {
 };
 
 function updatePrefsDisplay() {
-    if (document.getElementById('quick-prefs-display')) document.getElementById('quick-prefs-display').textContent = `${currentConfig.chatLangLabel} • ${currentConfig.userLevelLabel}`;
-    if (document.getElementById('style-display')) document.getElementById('style-display').textContent = currentConfig.expressionStyleLabel;
+    const prefDisplay = document.getElementById('quick-prefs-display');
+    const styleDisplay = document.getElementById('style-display');
+    if (prefDisplay) prefDisplay.textContent = `${currentConfig.chatLangLabel} • ${currentConfig.userLevelLabel}`;
+    if (styleDisplay) styleDisplay.textContent = currentConfig.expressionStyleLabel;
 }
 
-if (document.getElementById('api-key-input')) {
-    document.getElementById('api-key-input').value = currentConfig.apiKey;
-    document.getElementById('eleven-key-input').value = currentConfig.elevenKey;
-}
+const apiKeyInput = document.getElementById('api-key-input');
+const elevenKeyInput = document.getElementById('eleven-key-input');
+if (apiKeyInput) apiKeyInput.value = currentConfig.apiKey;
+if (elevenKeyInput) elevenKeyInput.value = currentConfig.elevenKey;
+
 updatePrefsDisplay();
 
 function checkStreak() {
@@ -81,25 +85,26 @@ function triggerActivity() {
     }
     checkStreak(); 
 }
-checkStreak(); 
 
-if (document.getElementById('save-settings-btn')) {
-    document.getElementById('save-settings-btn').addEventListener('click', () => {
-        currentConfig.apiKey = document.getElementById('api-key-input').value.trim();
-        currentConfig.elevenKey = document.getElementById('eleven-key-input').value.trim();
-        localStorage.setItem('geminiApiKey', currentConfig.apiKey);
-        localStorage.setItem('elevenLabsApiKey', currentConfig.elevenKey);
-        alert('تم حفظ الإعدادات بنجاح!');
-    });
-}
+// تشغيل الستريك بحماية
+try { checkStreak(); } catch(e) { console.log(e); }
+
+document.getElementById('save-settings-btn')?.addEventListener('click', () => {
+    currentConfig.apiKey = document.getElementById('api-key-input')?.value.trim() || '';
+    currentConfig.elevenKey = document.getElementById('eleven-key-input')?.value.trim() || '';
+    localStorage.setItem('geminiApiKey', currentConfig.apiKey);
+    localStorage.setItem('elevenLabsApiKey', currentConfig.elevenKey);
+    alert('تم حفظ الإعدادات بنجاح!');
+});
 
 const bottomSheet = document.getElementById('bottom-sheet');
 const sheetTitle = document.getElementById('sheet-title');
 const sheetOptionsContainer = document.getElementById('sheet-options');
 
-if (document.getElementById('close-sheet-btn')) document.getElementById('close-sheet-btn').addEventListener('click', () => bottomSheet.classList.add('hidden'));
+document.getElementById('close-sheet-btn')?.addEventListener('click', () => bottomSheet?.classList.add('hidden'));
 
 function openSheet(title, options, currentValue, onSelect) {
+    if(!sheetTitle || !sheetOptionsContainer || !bottomSheet) return;
     sheetTitle.textContent = title;
     sheetOptionsContainer.innerHTML = '';
     options.forEach(opt => {
@@ -112,17 +117,15 @@ function openSheet(title, options, currentValue, onSelect) {
     bottomSheet.classList.remove('hidden');
 }
 
-if (document.getElementById('quick-prefs-btn')) {
-    document.getElementById('quick-prefs-btn').addEventListener('click', () => {
-        openSheet('الإعدادات السريعة', [
-            { value: 'lang', label: '<i class="fa-solid fa-language"></i> تغيير اللغة' },
-            { value: 'level', label: '<i class="fa-solid fa-layer-group"></i> تغيير المستوى' }
-        ], null, (sel) => {
-            if(sel.value === 'lang') openLangSheet();
-            if(sel.value === 'level') openLevelSheet();
-        });
+document.getElementById('quick-prefs-btn')?.addEventListener('click', () => {
+    openSheet('الإعدادات السريعة', [
+        { value: 'lang', label: '<i class="fa-solid fa-language"></i> تغيير اللغة' },
+        { value: 'level', label: '<i class="fa-solid fa-layer-group"></i> تغيير المستوى' }
+    ], null, (sel) => {
+        if(sel.value === 'lang') openLangSheet();
+        if(sel.value === 'level') openLevelSheet();
     });
-}
+});
 
 function openLangSheet() {
     openSheet('اللغة', [
@@ -133,7 +136,7 @@ function openLangSheet() {
     ], currentConfig.chatLanguage, (sel) => {
         currentConfig.chatLanguage = sel.value; currentConfig.chatLangLabel = sel.label.split(' ')[0];
         localStorage.setItem('chatLang', sel.value); localStorage.setItem('chatLangLabel', currentConfig.chatLangLabel);
-        updatePrefsDisplay(); bottomSheet.classList.add('hidden');
+        updatePrefsDisplay(); bottomSheet?.classList.add('hidden');
     });
 }
 
@@ -144,57 +147,51 @@ function openLevelSheet() {
     ], currentConfig.userLevel, (sel) => {
         currentConfig.userLevel = sel.value; currentConfig.userLevelLabel = sel.label;
         localStorage.setItem('userLevel', sel.value); localStorage.setItem('userLevelLabel', sel.label);
-        updatePrefsDisplay(); bottomSheet.classList.add('hidden');
+        updatePrefsDisplay(); bottomSheet?.classList.add('hidden');
     });
 }
 
-if (document.getElementById('style-selector-btn')) {
-    document.getElementById('style-selector-btn').addEventListener('click', () => {
-        openSheet('أسلوب المعلم', [
-            { value: 'polite', label: 'مؤدب ومشجع' }, { value: 'sarcastic', label: 'ساخر كوميدي 🤬' }, { value: 'strict', label: 'صارم وجدي' }
-        ], currentConfig.expressionStyle, (sel) => {
-            currentConfig.expressionStyle = sel.value; currentConfig.expressionStyleLabel = sel.label;
-            localStorage.setItem('chatStyle', sel.value); localStorage.setItem('chatStyleLabel', sel.label);
-            updatePrefsDisplay(); bottomSheet.classList.add('hidden');
-        });
+document.getElementById('style-selector-btn')?.addEventListener('click', () => {
+    openSheet('أسلوب المعلم', [
+        { value: 'polite', label: 'مؤدب ومشجع' }, { value: 'sarcastic', label: 'ساخر كوميدي 🤬' }, { value: 'strict', label: 'صارم وجدي' }
+    ], currentConfig.expressionStyle, (sel) => {
+        currentConfig.expressionStyle = sel.value; currentConfig.expressionStyleLabel = sel.label;
+        localStorage.setItem('chatStyle', sel.value); localStorage.setItem('chatStyleLabel', sel.label);
+        updatePrefsDisplay(); bottomSheet?.classList.add('hidden');
     });
-}
+});
 
 const scenarioModal = document.getElementById('scenario-modal');
-if (document.getElementById('open-scenario-btn')) {
-    document.getElementById('open-scenario-btn').addEventListener('click', () => scenarioModal.classList.remove('hidden'));
-    document.getElementById('close-scenario-btn').addEventListener('click', () => scenarioModal.classList.add('hidden'));
+document.getElementById('open-scenario-btn')?.addEventListener('click', () => scenarioModal?.classList.remove('hidden'));
+document.getElementById('close-scenario-btn')?.addEventListener('click', () => scenarioModal?.classList.add('hidden'));
 
-    document.getElementById('start-scenario-btn').addEventListener('click', () => {
-        currentConfig.userRole = document.getElementById('user-role').value.trim();
-        currentConfig.aiRole = document.getElementById('ai-role').value.trim();
-        currentConfig.scenarioPlace = document.getElementById('scenario-place').value.trim();
-        scenarioModal.classList.add('hidden');
-        startVoiceSession();
-    });
+document.getElementById('start-scenario-btn')?.addEventListener('click', () => {
+    currentConfig.userRole = document.getElementById('user-role')?.value.trim() || '';
+    currentConfig.aiRole = document.getElementById('ai-role')?.value.trim() || '';
+    currentConfig.scenarioPlace = document.getElementById('scenario-place')?.value.trim() || '';
+    scenarioModal?.classList.add('hidden');
+    startVoiceSession();
+});
 
-    document.getElementById('guided-practice-btn').addEventListener('click', () => {
-        currentConfig.userRole = ''; currentConfig.aiRole = ''; currentConfig.scenarioPlace = '';
-        startVoiceSession();
-    });
-}
+document.getElementById('guided-practice-btn')?.addEventListener('click', () => {
+    currentConfig.userRole = ''; currentConfig.aiRole = ''; currentConfig.scenarioPlace = '';
+    startVoiceSession();
+});
 
 let isTextVisible = true;
 const toggleTextBtn = document.getElementById('toggle-text-btn');
 const transcriptText = document.getElementById('voice-live-transcript');
 
-if (toggleTextBtn && transcriptText) {
-    toggleTextBtn.addEventListener('click', () => {
-        isTextVisible = !isTextVisible;
-        if(isTextVisible) {
-            transcriptText.classList.remove('blurred');
-            toggleTextBtn.innerHTML = '<i class="fa-solid fa-eye"></i>';
-        } else {
-            transcriptText.classList.add('blurred');
-            toggleTextBtn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
-        }
-    });
-}
+toggleTextBtn?.addEventListener('click', () => {
+    isTextVisible = !isTextVisible;
+    if(isTextVisible) {
+        transcriptText?.classList.remove('blurred');
+        toggleTextBtn.innerHTML = '<i class="fa-solid fa-eye"></i>';
+    } else {
+        transcriptText?.classList.add('blurred');
+        toggleTextBtn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+    }
+});
 
 let isVoiceModeActive = false; 
 let synth = window.speechSynthesis;
@@ -203,7 +200,21 @@ let currentAudio = null;
 
 if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    recognition = new SR(); recognition.continuous = false; recognition.interimResults = true; 
+    recognition = new SR(); 
+    recognition.continuous = false; 
+    recognition.interimResults = true; 
+    
+    recognition.onresult = function(event) {
+        let finalTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript; }
+        if (finalTranscript !== '') {
+            recognition.stop(); 
+            if(transcriptText) transcriptText.textContent = finalTranscript;
+            triggerActivity(); fetchAIResponse(finalTranscript, true); 
+        }
+    };
+
+    recognition.onerror = function(event) { if (event.error === 'no-speech' && isVoiceModeActive) startListening(); };
 }
 
 function startListening() {
@@ -213,9 +224,8 @@ function startListening() {
     recognition.lang = langCodes[currentConfig.chatLanguage] || 'en-US';
     
     const voiceStatus = document.getElementById('voice-status-text');
-    const voiceTrans = document.getElementById('voice-live-transcript');
     if(voiceStatus) voiceStatus.textContent = "جاري الاستماع...";
-    if(voiceTrans) voiceTrans.textContent = "...";
+    if(transcriptText) transcriptText.textContent = "...";
     
     setSpeakingUI(false); 
     try { recognition.start(); } catch(e) {}
@@ -273,7 +283,8 @@ async function speakText(text) {
 }
 
 function speakTextFree(spokenText) {
-    synth.cancel(); const utterance = new SpeechSynthesisUtterance(spokenText);
+    if(synth) synth.cancel(); 
+    const utterance = new SpeechSynthesisUtterance(spokenText);
     const langCodes = { 'English': 'en-US', 'French': 'fr-FR', 'Spanish': 'es-ES', 'German': 'de-DE', 'Arabic': 'ar-SA', 'Italian': 'it-IT', 'Portuguese': 'pt-PT', 'Turkish': 'tr-TR' };
     utterance.lang = langCodes[currentConfig.chatLanguage] || 'en-US';
     
@@ -283,22 +294,9 @@ function speakTextFree(spokenText) {
     setSpeakingUI(true); 
     
     utterance.onend = function() { setSpeakingUI(false); if (isVoiceModeActive) setTimeout(startListening, 500); };
-    synth.speak(utterance);
+    if(synth) synth.speak(utterance);
 }
 
-recognition.onresult = function(event) {
-    let finalTranscript = '';
-    for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript; }
-    if (finalTranscript !== '') {
-        recognition.stop(); 
-        if(transcriptText) transcriptText.textContent = finalTranscript;
-        triggerActivity(); fetchAIResponse(finalTranscript, true); 
-    }
-};
-
-recognition.onerror = function(event) { if (event.error === 'no-speech' && isVoiceModeActive) startListening(); };
-
-// بدء المحادثة مباشرة في صلب الموضوع 
 function startVoiceSession() {
     if (!currentConfig.apiKey) { alert("الرجاء إدخال Gemini API Key في الإعدادات!"); switchScreen('settings-screen'); return; }
     isVoiceModeActive = true; switchScreen('voice-screen'); 
@@ -316,12 +314,14 @@ function startVoiceSession() {
     fetchAIResponse(hiddenPrompt, true);
 }
 
-if (document.getElementById('end-voice-call-btn')) {
-    document.getElementById('end-voice-call-btn').addEventListener('click', () => {
-        isVoiceModeActive = false; recognition.stop(); synth.cancel(); setSpeakingUI(false);
-        if(currentAudio) currentAudio.pause(); switchScreen('home-screen'); 
-    });
-}
+document.getElementById('end-voice-call-btn')?.addEventListener('click', () => {
+    isVoiceModeActive = false; 
+    if(recognition) recognition.stop(); 
+    if(synth) synth.cancel(); 
+    setSpeakingUI(false);
+    if(currentAudio) currentAudio.pause(); 
+    switchScreen('home-screen'); 
+});
 
 function getSystemPrompt() {
     let levelInstructions = "";
@@ -373,7 +373,6 @@ function getSystemPrompt() {
 async function fetchAIResponse(userText, isVoiceCall = false) {
     if (!currentConfig.apiKey) return;
     
-    // منع تسجيل الكلام الصوتي والأوامر المخفية في الشات الكتابي
     if (!isVoiceCall) {
         if (!userText.includes("[SYSTEM INSTRUCTION]")) {
             addChatMessage(userText, true); 
@@ -426,7 +425,16 @@ async function fetchAIResponse(userText, isVoiceCall = false) {
 }
 
 const chatBox = document.getElementById('chat-box');
-const userInput = document.getElementById('user-input');
-if (document.getElementById('send-btn')) {
-    document.getElementById('send-btn').addEventListener('click', () => {
-        const text = user
+document.getElementById('send-btn')?.addEventListener('click', () => {
+    const userInput = document.getElementById('user-input');
+    const text = userInput?.value.trim();
+    if (text) { 
+        if (!currentConfig.apiKey) { alert("الرجاء إدخال Gemini API Key!"); return; }
+        if (userInput) userInput.value = ''; 
+        fetchAIResponse(text, false); 
+    }
+});
+
+function addChatMessage(text, isUser) {
+    const div = document.createElement('div');
+    div.className = `messa
