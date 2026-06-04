@@ -366,7 +366,7 @@ function getSystemPrompt() {
     return basePrompt;
 }
 
-// التحديث الجذري للاتصال بخوادم جوجل
+// الاتصال بخوادم جوجل (تم استرجاع الاسم الكامل للموديل -latest)
 async function fetchAIResponse(userText, isVoiceCall = false) {
     if (!currentConfig.apiKey) return;
     
@@ -374,13 +374,13 @@ async function fetchAIResponse(userText, isVoiceCall = false) {
     else document.getElementById('voice-status-text').textContent = "يفكر...";
 
     try {
-        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${currentConfig.apiKey}`;
+        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${currentConfig.apiKey}`;
         
         const response = await fetch(GEMINI_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                system_instruction: {  // تم تصحيح هذا السطر ليقبله خادم جوجل
+                system_instruction: { 
                     parts: [{ text: getSystemPrompt() }]
                 },
                 contents: [{
@@ -393,7 +393,6 @@ async function fetchAIResponse(userText, isVoiceCall = false) {
         
         const data = await response.json();
         
-        // نظام كشف الأخطاء الدقيق
         if (!response.ok) {
             console.error("Gemini API Error:", data);
             const exactError = data.error?.message || "خطأ مجهول من الخادم";
@@ -407,7 +406,7 @@ async function fetchAIResponse(userText, isVoiceCall = false) {
         
     } catch (error) {
         console.error(error);
-        const errorMsg = `⚠️ رسالة الخطأ من جوجل: ${error.message}`; // سيطبع الخطأ الحقيقي
+        const errorMsg = `⚠️ رسالة الخطأ من جوجل: ${error.message}`; 
         
         if (isVoiceCall) {
             document.getElementById('voice-status-text').textContent = "خطأ في الاتصال";
