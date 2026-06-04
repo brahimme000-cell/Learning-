@@ -36,6 +36,46 @@ document.getElementById('api-key-input').value = currentConfig.apiKey;
 document.getElementById('eleven-key-input').value = currentConfig.elevenKey;
 updatePrefsDisplay();
 
+function checkStreak() {
+    const today = new Date().toDateString();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayString = yesterday.toDateString();
+    
+    let lastActive = localStorage.getItem('lastActiveDate');
+    let streakCount = parseInt(localStorage.getItem('streakCount')) || 0;
+    
+    const streakContainer = document.getElementById('streak-container');
+    const streakText = document.getElementById('streak-count');
+
+    if (streakCount === 0) {
+        streakContainer.classList.remove('active');
+    } else if (lastActive === today) {
+        streakContainer.classList.add('active'); 
+    } else if (lastActive === yesterdayString) {
+        streakContainer.classList.remove('active'); 
+    } else {
+        streakCount = 0; 
+        localStorage.setItem('streakCount', streakCount);
+        streakContainer.classList.remove('active');
+    }
+    streakText.textContent = streakCount;
+}
+
+function triggerActivity() {
+    const today = new Date().toDateString();
+    let lastActive = localStorage.getItem('lastActiveDate');
+    let streakCount = parseInt(localStorage.getItem('streakCount')) || 0;
+
+    if (lastActive !== today) {
+        streakCount++;
+        localStorage.setItem('streakCount', streakCount);
+        localStorage.setItem('lastActiveDate', today);
+    }
+    checkStreak(); 
+}
+checkStreak(); 
+
 document.getElementById('save-settings-btn').addEventListener('click', () => {
     currentConfig.apiKey = document.getElementById('api-key-input').value.trim();
     currentConfig.elevenKey = document.getElementById('eleven-key-input').value.trim();
@@ -74,7 +114,6 @@ document.getElementById('quick-prefs-btn').addEventListener('click', () => {
 });
 
 function openLangSheet() {
-    // تم استرجاع العربية وإضافة لغات جديدة للتطبيق
     openSheet('اللغة', [
         { value: 'English', label: '🇺🇸 English' }, 
         { value: 'French', label: '🇫🇷 Français' },
@@ -142,7 +181,6 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
 function startListening() {
     if (!isVoiceModeActive || !recognition) return;
     
-    // دعم الاستماع للغات الجديدة
     const langCodes = {
         'English': 'en-US', 'French': 'fr-FR', 'Spanish': 'es-ES', 'German': 'de-DE', 
         'Arabic': 'ar-SA', 'Italian': 'it-IT', 'Portuguese': 'pt-PT', 'Turkish': 'tr-TR'
@@ -155,7 +193,7 @@ function startListening() {
     try { recognition.start(); } catch(e) {}
 }
 
-// نظام كشف الأخطاء لـ ElevenLabs
+// نظام كشف الأخطاء المباشر لـ ElevenLabs على شاشة الصوت
 async function speakText(text) {
     let spokenText = text.split("💡")[0].trim();
     
@@ -165,6 +203,7 @@ async function speakText(text) {
     }
     
     document.getElementById('voice-status-text').textContent = "يجهز الصوت البشري...";
+    document.getElementById('voice-status-text').style.color = "var(--text-light)";
     
     try {
         const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM`, {
@@ -173,10 +212,9 @@ async function speakText(text) {
             body: JSON.stringify({ text: spokenText, model_id: "eleven_multilingual_v2" })
         });
         
-        // إذا كان هناك خطأ في المفتاح أو الرصيد، سيكشفه هنا
         if (!response.ok) {
             const errData = await response.json();
-            throw new Error(errData.detail?.status || errData.detail?.message || "خطأ في المفتاح");
+            throw new Error(errData.detail?.status || errData.detail?.message || "مفتاح غير صالح أو رصيد منتهي");
         }
         
         const audioUrl = URL.createObjectURL(await response.blob());
@@ -193,10 +231,17 @@ async function speakText(text) {
         };
         
     } catch (e) { 
-        console.warn("ElevenLabs failed, falling back to free voice.", e);
-        // يرسل لك رسالة الخطأ في الشات لتعرف السبب
-        addChatMessage(`⚠️ فشل الصوت البشري (ElevenLabs Error): ${e.message}`, false);
-        speakTextFree(spokenText); 
+        console.warn("ElevenLabs failed:", e);
+        
+        // طباعة رسالة الخطأ بالخط العريض والأحمر في شاشة الصوت
+        document.getElementById('voice-status-text').textContent = `خطأ ElevenLabs: ${e.message}`;
+        document.getElementById('voice-status-text').style.color = "var(--brand-danger)";
+        
+        // الانتظار 3 ثواني لتتمكن من قراءة الخطأ، ثم تشغيل صوت كروم
+        setTimeout(() => {
+            document.getElementById('voice-status-text').style.color = "var(--text-light)";
+            speakTextFree(spokenText); 
+        }, 3500);
     }
 }
 
@@ -209,7 +254,7 @@ function speakTextFree(spokenText) {
     };
     utterance.lang = langCodes[currentConfig.chatLanguage] || 'en-US';
     
-    document.getElementById('voice-status-text').textContent = "الذكاء الاصطناعي يتحدث...";
+    document.getElementById('voice-status-text').textContent = "الذكاء الاصطناعي يتحدث (صوت المتصفح)...";
     document.getElementById('voice-live-transcript').textContent = spokenText; 
     document.getElementById('voice-logo').classList.add('speaking-animation');
     utterance.onend = function() { if (isVoiceModeActive) setTimeout(startListening, 500); };
@@ -221,6 +266,7 @@ recognition.onresult = function(event) {
     for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript; }
     if (finalTranscript !== '') {
         recognition.stop(); document.getElementById('voice-live-transcript').textContent = finalTranscript;
+        triggerActivity();
         fetchAIResponse(finalTranscript, true); 
     }
 };
@@ -228,7 +274,7 @@ recognition.onresult = function(event) {
 recognition.onerror = function(event) { if (event.error === 'no-speech' && isVoiceModeActive) startListening(); };
 
 function startVoiceSession() {
-    if (!currentConfig.apiKey) { alert("أدخل مفتاح Gemini في الإعدادات!"); switchScreen('settings-screen'); return; }
+    if (!currentConfig.apiKey) { alert("الرجاء إدخال Gemini API Key في الإعدادات!"); switchScreen('settings-screen'); return; }
     isVoiceModeActive = true; switchScreen('voice-screen'); speakText("Hello! Let's go!");
 }
 
@@ -239,9 +285,36 @@ document.getElementById('end-voice-call-btn').addEventListener('click', () => {
 });
 
 function getSystemPrompt() {
-    return `You are a professional language tutor and actor for ${currentConfig.chatLanguage}. User level: ${currentConfig.userLevel}.
-    ${currentConfig.scenarioPlace ? `Scenario: ${currentConfig.scenarioPlace}. User is ${currentConfig.userRole}. You are ${currentConfig.aiRole}.` : ''}
-    Reply in character (1-2 sentences). Add a newline starting with "💡 الملاحظة:" in Arabic ONLY if there's a language mistake.`;
+    let levelInstructions = "";
+    switch(currentConfig.userLevel) {
+        case 'Beginner': levelInstructions = "Use simple words and basic sentences."; break;
+        case 'Intermediate': levelInstructions = "Use common conversational vocabulary."; break;
+        case 'Advanced': levelInstructions = "Use advanced vocabulary and natural idioms."; break;
+        case 'Native': levelInstructions = "Use natural local slang, idioms, and normal fast pacing."; break;
+    }
+
+    let roleplaySetup = "";
+    if (currentConfig.userRole && currentConfig.aiRole && currentConfig.scenarioPlace) {
+        roleplaySetup = `\nROLEPLAY SCENARIO: We are at [${currentConfig.scenarioPlace}]. The user acts as [${currentConfig.userRole}]. YOU must act strictly as [${currentConfig.aiRole}].
+        DYNAMICS: You must completely embody this character. Match the emotional tone perfectly.`;
+    } else {
+        let styleText = currentConfig.expressionStyle === 'strict' ? "strict and formal tutor." : "polite, encouraging, and friendly language partner.";
+        roleplaySetup = `\nSCENARIO: General guided practice. Act as a ${styleText}`;
+    }
+
+    let basePrompt = `You are a professional language tutor and an exceptional improvisational actor for ${currentConfig.chatLanguage}.
+    Your sole task is to engage the user in a highly realistic conversation. Never break character.
+
+    USER LEVEL CONTROL: ${currentConfig.userLevel} (${levelInstructions}).
+    ${roleplaySetup}
+
+    STRICT CORRECTION AND ARABIC OUTPUT FORMAT:
+    - Line 1: Your conversational response in character. Keep it strictly to 1-2 sentences max. Speak entirely in ${currentConfig.chatLanguage}.
+    - Line 2 (MUST START WITH A NEWLINE): "💡 الملاحظة: " (In clear, simple Arabic).
+      * CRITICAL: ONLY make a correction if they made an actual grammar or vocabulary mistake in the target language.
+      * If the phrase was correct, just write "تعبير صحيح، تابع!" and do not add any extra text.`;
+    
+    return basePrompt;
 }
 
 async function fetchAIResponse(userText, isVoiceCall = false) {
@@ -303,5 +376,5 @@ function addChatMessage(text, isUser) {
     div.className = `message ${isUser ? 'user-msg' : 'bot-msg'}`;
     div.innerHTML = `<div class="msg-content">${text}</div>`;
     chatBox.appendChild(div); chatBox.scrollTop = chatBox.scrollHeight;
-    }
-                                        
+                                                                   }
+    
