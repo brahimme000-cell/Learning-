@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Tutor - Pro Teacher Engine</title>
+    <title>AI Tutor - Gemini & ElevenLabs</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -11,16 +11,13 @@
 
 <div id="app-container">
     
-    <!-- الشاشة 1: الرئيسية -->
     <main id="home-screen" class="screen active">
         <div class="top-bar">
-            <!-- الشعلة (الستريك) -->
             <div class="streak-badge" id="streak-container" title="أيام النشاط">
                 <i class="fa-solid fa-fire" id="streak-icon"></i> 
                 <span id="streak-count">0</span>
             </div>
             
-            <!-- الزر السريع للغة والمستوى -->
             <button id="quick-prefs-btn" class="top-select-btn">
                 <span id="quick-prefs-display">🇺🇸 English • متوسط</span>
                 <i class="fa-solid fa-chevron-down"></i>
@@ -28,7 +25,6 @@
         </div>
         
         <div class="center-content">
-            <!-- اللوجو الرئيسي (كتاب اللغات) -->
             <div class="custom-book-logo" id="main-logo">
                 <i class="fa-solid fa-sparkles logo-sparkle"></i>
                 <div class="book-pages">
@@ -50,7 +46,6 @@
         </div>
     </main>
 
-    <!-- الشاشة 2: المحادثة الصوتية المستقلة -->
     <main id="voice-screen" class="screen voice-mode-screen">
         <div class="voice-header">
             <span>محادثة صوتية مباشرة</span>
@@ -76,7 +71,6 @@
         </div>
     </main>
 
-    <!-- نافذة السيناريو المنبثقة -->
     <div id="scenario-modal" class="modal hidden">
         <div class="modal-content">
             <h3 class="modal-title">تخصيص المحادثة</h3>
@@ -99,12 +93,10 @@
         </div>
     </div>
 
-    <!-- الشاشة 3: المحادثة الكتابية -->
     <main id="chat-screen" class="screen">
         <div class="chat-header">Text Chat</div>
         <div id="chat-box">
-            <!-- رسالة الترحيب -->
-            <div class="message bot-msg"><div class="msg-content">أهلاً بك! أنا أستاذك الافتراضي. كيف يمكنني مساعدتك في تطوير لغتك اليوم؟</div></div>
+            <div class="message bot-msg"><div class="msg-content">أهلاً بك! أنا أستاذك الافتراضي. كيف يمكنني مساعدتك؟</div></div>
         </div>
         <div id="input-area">
             <input type="text" id="user-input" placeholder="Type a message...">
@@ -112,13 +104,16 @@
         </div>
     </main>
 
-    <!-- الشاشة 4: الإعدادات -->
     <main id="settings-screen" class="screen">
         <div class="settings-header">الإعدادات العامة</div>
         <div class="settings-list">
             <div class="setting-card">
-                <label><i class="fa-solid fa-key"></i> Groq API Key</label>
-                <input type="password" id="api-key-input" placeholder="gsk_...">
+                <label><i class="fa-solid fa-brain"></i> Gemini API Key (مطلوب)</label>
+                <input type="password" id="api-key-input" placeholder="AIzaSy...">
+            </div>
+            <div class="setting-card">
+                <label><i class="fa-solid fa-microphone-lines"></i> ElevenLabs API Key (اختياري للصوت البشري)</label>
+                <input type="password" id="eleven-key-input" placeholder="sk_...">
             </div>
             <div class="setting-card">
                 <label><i class="fa-solid fa-masks-theater"></i> أسلوب المعلم / قساوة التصحيح</label>
@@ -131,7 +126,6 @@
         </div>
     </main>
 
-    <!-- قائمة التنقل السفلية -->
     <nav class="bottom-nav">
         <button class="nav-item active" data-target="home-screen">
             <i class="fa-solid fa-microphone"></i><span>Speak</span>
@@ -144,7 +138,6 @@
         </button>
     </nav>
 
-    <!-- القائمة المنبثقة السفلية (Bottom Sheet) تم إصلاح التداخل هنا -->
     <div id="bottom-sheet" class="sheet-overlay hidden">
         <div class="sheet-content">
             <div class="sheet-header">
@@ -152,14 +145,12 @@
                 <h3 id="sheet-title">اختر</h3>
                 <button id="close-sheet-btn" class="icon-btn"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div id="sheet-options" class="sheet-options-list">
-                <!-- الخيارات -->
-            </div>
+            <div id="sheet-options" class="sheet-options-list"></div>
         </div>
     </div>
 </div>
 
 <script src="app.js"></script>
 </body>
-            </html>
-            
+                </html>
+                
