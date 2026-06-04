@@ -366,6 +366,7 @@ function getSystemPrompt() {
     return basePrompt;
 }
 
+// الاتصال المحدث بخوادم Gemini (تصحيح هيكل الطلب)
 async function fetchAIResponse(userText, isVoiceCall = false) {
     if (!currentConfig.apiKey) return;
     
@@ -373,21 +374,30 @@ async function fetchAIResponse(userText, isVoiceCall = false) {
     else document.getElementById('voice-status-text').textContent = "يفكر...";
 
     try {
-        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${currentConfig.apiKey}`;
+        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${currentConfig.apiKey}`;
         
         const response = await fetch(GEMINI_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                system_instruction: { parts: { text: getSystemPrompt() } },
-                contents: [{ parts: [{ text: userText }] }],
+                systemInstruction: {
+                    parts: [{ text: getSystemPrompt() }]
+                },
+                contents: [{
+                    role: "user",
+                    parts: [{ text: userText }]
+                }],
                 generationConfig: { temperature: 0.7 }
             })
         });
         
         const data = await response.json();
         
-        if (!response.ok) throw new Error("Gemini API Error");
+        // كشف الأخطاء وإبلاغ المستخدم مباشرة
+        if (!response.ok) {
+            console.error("Gemini API Error:", data);
+            throw new Error(data.error?.message || "خطأ في الاتصال بالخادم");
+        }
         
         const replyText = data.candidates[0].content.parts[0].text;
         
@@ -397,8 +407,10 @@ async function fetchAIResponse(userText, isVoiceCall = false) {
     } catch (error) {
         console.error(error);
         if (isVoiceCall) {
-            document.getElementById('voice-status-text').textContent = "خطأ في الاتصال";
-            setTimeout(startListening, 2000);
+            document.getElementById('voice-status-text').textContent = "خطأ في الاتصال (تأكد من الـ API Key)";
+            setTimeout(startListening, 3000);
+        } else {
+            addChatMessage("⚠️ عذراً، خطأ في الاتصال. تأكد أن الـ API Key صحيح ولا توجد به مسافات فارغة.", false);
         }
     }
 }
@@ -428,4 +440,4 @@ sendBtn.addEventListener('click', () => {
         fetchAIResponse(text, false); 
     }
 });
-        
+                                                            
