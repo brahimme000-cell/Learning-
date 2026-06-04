@@ -199,14 +199,16 @@ function getSystemPrompt() {
     Reply in character (1-2 sentences). Add a newline starting with "💡 الملاحظة:" in Arabic ONLY if there's a language mistake.`;
 }
 
-// محرك الطوارئ الشامل للاتصال بالذكاء الاصطناعي
+// محرك الطوارئ الصحيح بالأسماء المحدثة للموديلات
 async function fetchAIResponse(userText, isVoiceCall = false) {
     if (!currentConfig.apiKey) return;
     if (!isVoiceCall) addChatMessage(userText, true); else document.getElementById('voice-status-text').textContent = "يفكر...";
 
-    let modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-1.5-pro", "gemini-pro"];
+    // هنا كان الخطأ، قمت بإرجاع الموديلات الجديدة العاملة
+    let modelsToTry = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-flash-latest"];
     let success = false;
     let replyText = "";
+    let lastError = "";
 
     for (let model of modelsToTry) {
         try {
@@ -226,7 +228,7 @@ async function fetchAIResponse(userText, isVoiceCall = false) {
             success = true;
             break; 
         } catch (error) {
-            console.log(`Failed with model ${model}, trying next...`);
+            lastError = error.message;
         }
     }
 
@@ -238,7 +240,7 @@ async function fetchAIResponse(userText, isVoiceCall = false) {
             document.getElementById('voice-status-text').textContent = "خطأ نهائي في الاتصال";
             setTimeout(startListening, 3000);
         } else {
-            addChatMessage("⚠️ فشل الاتصال بجميع الموديلات. تأكد من أن الـ API Key منسوخ بالكامل ولا يحتوي على مسافات.", false);
+            addChatMessage(`⚠️ رسالة الخطأ من جوجل: ${lastError}`, false);
         }
     }
 }
@@ -258,4 +260,4 @@ function addChatMessage(text, isUser) {
     div.className = `message ${isUser ? 'user-msg' : 'bot-msg'}`;
     div.innerHTML = `<div class="msg-content">${text}</div>`;
     chatBox.appendChild(div); chatBox.scrollTop = chatBox.scrollHeight;
-}
+                         }
