@@ -74,9 +74,16 @@ document.getElementById('quick-prefs-btn').addEventListener('click', () => {
 });
 
 function openLangSheet() {
+    // تم استرجاع العربية وإضافة لغات جديدة للتطبيق
     openSheet('اللغة', [
-        { value: 'English', label: '🇺🇸 English' }, { value: 'French', label: '🇫🇷 Français' },
-        { value: 'Spanish', label: '🇪🇸 Español' }, { value: 'German', label: '🇩🇪 Deutsch' }
+        { value: 'English', label: '🇺🇸 English' }, 
+        { value: 'French', label: '🇫🇷 Français' },
+        { value: 'Spanish', label: '🇪🇸 Español' }, 
+        { value: 'German', label: '🇩🇪 Deutsch' },
+        { value: 'Arabic', label: '🇸🇦 العربية' },
+        { value: 'Italian', label: '🇮🇹 Italiano' },
+        { value: 'Portuguese', label: '🇵🇹 Português' },
+        { value: 'Turkish', label: '🇹🇷 Türkçe' }
     ], currentConfig.chatLanguage, (sel) => {
         currentConfig.chatLanguage = sel.value; currentConfig.chatLangLabel = sel.label.split(' ')[0];
         localStorage.setItem('chatLang', sel.value); localStorage.setItem('chatLangLabel', currentConfig.chatLangLabel);
@@ -134,23 +141,44 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
 
 function startListening() {
     if (!isVoiceModeActive || !recognition) return;
-    recognition.lang = currentConfig.chatLanguage === 'English' ? 'en-US' : (currentConfig.chatLanguage === 'French' ? 'fr-FR' : 'ar-SA');
+    
+    // دعم الاستماع للغات الجديدة
+    const langCodes = {
+        'English': 'en-US', 'French': 'fr-FR', 'Spanish': 'es-ES', 'German': 'de-DE', 
+        'Arabic': 'ar-SA', 'Italian': 'it-IT', 'Portuguese': 'pt-PT', 'Turkish': 'tr-TR'
+    };
+    recognition.lang = langCodes[currentConfig.chatLanguage] || 'en-US';
+    
     document.getElementById('voice-status-text').textContent = "جاري الاستماع...";
     document.getElementById('voice-live-transcript').textContent = "...";
     document.getElementById('voice-logo').classList.remove('speaking-animation'); 
     try { recognition.start(); } catch(e) {}
 }
 
+// نظام كشف الأخطاء لـ ElevenLabs
 async function speakText(text) {
     let spokenText = text.split("💡")[0].trim();
-    if (!currentConfig.elevenKey) { speakTextFree(spokenText); return; }
+    
+    if (!currentConfig.elevenKey) { 
+        speakTextFree(spokenText); 
+        return; 
+    }
+    
     document.getElementById('voice-status-text').textContent = "يجهز الصوت البشري...";
+    
     try {
         const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM`, {
-            method: 'POST', headers: { 'xi-api-key': currentConfig.elevenKey, 'Content-Type': 'application/json' },
+            method: 'POST', 
+            headers: { 'xi-api-key': currentConfig.elevenKey, 'Content-Type': 'application/json' },
             body: JSON.stringify({ text: spokenText, model_id: "eleven_multilingual_v2" })
         });
-        if (!response.ok) throw new Error("ElevenLabs Error");
+        
+        // إذا كان هناك خطأ في المفتاح أو الرصيد، سيكشفه هنا
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.detail?.status || errData.detail?.message || "خطأ في المفتاح");
+        }
+        
         const audioUrl = URL.createObjectURL(await response.blob());
         if (currentAudio) currentAudio.pause();
         currentAudio = new Audio(audioUrl);
@@ -158,12 +186,29 @@ async function speakText(text) {
         document.getElementById('voice-live-transcript').textContent = spokenText; 
         document.getElementById('voice-logo').classList.add('speaking-animation');
         currentAudio.play();
-        currentAudio.onended = () => { document.getElementById('voice-logo').classList.remove('speaking-animation'); if (isVoiceModeActive) setTimeout(startListening, 500); };
-    } catch (e) { speakTextFree(spokenText); }
+        
+        currentAudio.onended = () => { 
+            document.getElementById('voice-logo').classList.remove('speaking-animation'); 
+            if (isVoiceModeActive) setTimeout(startListening, 500); 
+        };
+        
+    } catch (e) { 
+        console.warn("ElevenLabs failed, falling back to free voice.", e);
+        // يرسل لك رسالة الخطأ في الشات لتعرف السبب
+        addChatMessage(`⚠️ فشل الصوت البشري (ElevenLabs Error): ${e.message}`, false);
+        speakTextFree(spokenText); 
+    }
 }
 
 function speakTextFree(spokenText) {
     synth.cancel(); const utterance = new SpeechSynthesisUtterance(spokenText);
+    
+    const langCodes = {
+        'English': 'en-US', 'French': 'fr-FR', 'Spanish': 'es-ES', 'German': 'de-DE', 
+        'Arabic': 'ar-SA', 'Italian': 'it-IT', 'Portuguese': 'pt-PT', 'Turkish': 'tr-TR'
+    };
+    utterance.lang = langCodes[currentConfig.chatLanguage] || 'en-US';
+    
     document.getElementById('voice-status-text').textContent = "الذكاء الاصطناعي يتحدث...";
     document.getElementById('voice-live-transcript').textContent = spokenText; 
     document.getElementById('voice-logo').classList.add('speaking-animation');
@@ -199,12 +244,10 @@ function getSystemPrompt() {
     Reply in character (1-2 sentences). Add a newline starting with "💡 الملاحظة:" in Arabic ONLY if there's a language mistake.`;
 }
 
-// محرك الطوارئ الصحيح بالأسماء المحدثة للموديلات
 async function fetchAIResponse(userText, isVoiceCall = false) {
     if (!currentConfig.apiKey) return;
     if (!isVoiceCall) addChatMessage(userText, true); else document.getElementById('voice-status-text').textContent = "يفكر...";
 
-    // هنا كان الخطأ، قمت بإرجاع الموديلات الجديدة العاملة
     let modelsToTry = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-flash-latest"];
     let success = false;
     let replyText = "";
@@ -260,4 +303,5 @@ function addChatMessage(text, isUser) {
     div.className = `message ${isUser ? 'user-msg' : 'bot-msg'}`;
     div.innerHTML = `<div class="msg-content">${text}</div>`;
     chatBox.appendChild(div); chatBox.scrollTop = chatBox.scrollHeight;
-                         }
+    }
+                                        
