@@ -175,7 +175,6 @@ if (document.getElementById('open-scenario-btn')) {
     });
 }
 
-// ميزة إخفاء/إظهار الكلمات
 let isTextVisible = true;
 const toggleTextBtn = document.getElementById('toggle-text-btn');
 const transcriptText = document.getElementById('voice-live-transcript');
@@ -215,16 +214,11 @@ function startListening() {
     try { recognition.start(); } catch(e) {}
 }
 
-// دالة التحكم في الموجات الصوتية
 function setSpeakingUI(isSpeaking) {
-    const logo = document.getElementById('voice-logo');
     const waves = document.getElementById('audio-waves');
-    if(isSpeaking) {
-        logo.classList.add('hidden');
-        waves.classList.remove('hidden');
-    } else {
-        logo.classList.remove('hidden');
-        waves.classList.add('hidden');
+    if(waves) {
+        if(isSpeaking) waves.classList.add('speaking');
+        else waves.classList.remove('speaking');
     }
 }
 
@@ -251,11 +245,11 @@ async function speakText(text) {
         currentAudio = new Audio(audioUrl);
         document.getElementById('voice-status-text').textContent = "الذكاء الاصطناعي يتحدث...";
         document.getElementById('voice-live-transcript').textContent = spokenText; 
-        setSpeakingUI(true); // تفعيل الموجات
+        setSpeakingUI(true); 
         currentAudio.play();
         
         currentAudio.onended = () => { 
-            setSpeakingUI(false); // إيقاف الموجات
+            setSpeakingUI(false); 
             if (isVoiceModeActive) setTimeout(startListening, 500); 
         };
         
@@ -274,7 +268,7 @@ function speakTextFree(spokenText) {
     
     document.getElementById('voice-status-text').textContent = "الذكاء الاصطناعي يتحدث...";
     document.getElementById('voice-live-transcript').textContent = spokenText; 
-    setSpeakingUI(true); // تفعيل الموجات
+    setSpeakingUI(true); 
     
     utterance.onend = function() { setSpeakingUI(false); if (isVoiceModeActive) setTimeout(startListening, 500); };
     synth.speak(utterance);
@@ -291,7 +285,6 @@ recognition.onresult = function(event) {
 
 recognition.onerror = function(event) { if (event.error === 'no-speech' && isVoiceModeActive) startListening(); };
 
-// الترحيب الذكي حسب اللغة
 function startVoiceSession() {
     if (!currentConfig.apiKey) { alert("الرجاء إدخال Gemini API Key في الإعدادات!"); switchScreen('settings-screen'); return; }
     isVoiceModeActive = true; switchScreen('voice-screen'); 
@@ -326,7 +319,6 @@ function getSystemPrompt() {
         case 'Native': levelInstructions = "Use natural local slang, fast pacing, and complex idioms. Act like a local resident."; break;
     }
 
-    // تفعيل صارم لأسلوب المعلم
     let styleInstruction = "";
     if (currentConfig.expressionStyle === 'strict') {
         styleInstruction = "Act as a VERY STRICT, formal, and no-nonsense language tutor. Point out mistakes bluntly.";
@@ -336,10 +328,16 @@ function getSystemPrompt() {
         styleInstruction = "Act as a VERY POLITE, encouraging, and friendly language partner. Be extremely supportive.";
     }
 
+    // زرع "الحياة البشرية" في السيناريوهات
     let roleplaySetup = "";
     if (currentConfig.userRole && currentConfig.aiRole && currentConfig.scenarioPlace) {
-        roleplaySetup = `\nROLEPLAY SCENARIO: We are at [${currentConfig.scenarioPlace}]. The user acts as [${currentConfig.userRole}]. YOU must act strictly as [${currentConfig.aiRole}].
-        DYNAMICS: You must completely embody this character. Match the emotional tone perfectly. DO NOT break character.`;
+        roleplaySetup = `\nCRITICAL ROLEPLAY INSTRUCTIONS:
+        - We are in a highly realistic simulation at [${currentConfig.scenarioPlace}].
+        - User's role: [${currentConfig.userRole}].
+        - YOUR ROLE: [${currentConfig.aiRole}].
+        - YOU ARE NOT AN AI. You are a real human being living in this situation.
+        - Show emotions, use natural filler words (like hmm, well, ah), react to the user's tone, and keep the conversation extremely lifelike and engaging.
+        - Never break character. Never mention you are an AI or language model.`;
     } else {
         roleplaySetup = `\nSCENARIO: General conversation.`;
     }
@@ -362,7 +360,10 @@ function getSystemPrompt() {
 
 async function fetchAIResponse(userText, isVoiceCall = false) {
     if (!currentConfig.apiKey) return;
-    if (!isVoiceCall) addChatMessage(userText, true); else document.getElementById('voice-status-text').textContent = "يفكر...";
+    
+    // منع تسجيل الكلام الصوتي في الشات الكتابي نهائياً
+    if (!isVoiceCall) addChatMessage(userText, true); 
+    else document.getElementById('voice-status-text').textContent = "يفكر...";
 
     let modelsToTry = ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-flash-latest"];
     let success = false;
@@ -390,8 +391,12 @@ async function fetchAIResponse(userText, isVoiceCall = false) {
     }
 
     if (success) {
-        addChatMessage(replyText, false); 
-        if (isVoiceCall) speakText(replyText); 
+        // الفصل الجذري بين المحادثة الصوتية والكتابية
+        if (isVoiceCall) {
+            speakText(replyText); 
+        } else {
+            addChatMessage(replyText, false); 
+        }
     } else {
         if (isVoiceCall) {
             document.getElementById('voice-status-text').textContent = "خطأ نهائي في الاتصال";
@@ -419,5 +424,5 @@ function addChatMessage(text, isUser) {
     div.className = `message ${isUser ? 'user-msg' : 'bot-msg'}`;
     div.innerHTML = `<div class="msg-content">${text}</div>`;
     if (chatBox) { chatBox.appendChild(div); chatBox.scrollTop = chatBox.scrollHeight; }
-            }
-                
+}
+    
