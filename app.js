@@ -180,7 +180,7 @@ document.getElementById('quick-prefs-btn').addEventListener('click', openQuickPr
 document.getElementById('style-selector-btn').addEventListener('click', () => {
     const options = [
         { value: 'polite', label: 'مؤدب ومشجع' },
-        { value: 'sarcastic', label: 'ساخر (Sarcastic)' },
+        { value: 'sarcastic', label: 'ساخر كوميدي 🤬' },
         { value: 'strict', label: 'صارم وجدي' }
     ];
     openSheet('أسلوب المعلم (قساوة التصحيح)', options, currentConfig.expressionStyle, (selected) => {
@@ -199,9 +199,9 @@ document.getElementById('open-scenario-btn').addEventListener('click', () => sce
 document.getElementById('close-scenario-btn').addEventListener('click', () => scenarioModal.classList.add('hidden'));
 
 document.getElementById('start-scenario-btn').addEventListener('click', () => {
-    currentConfig.userRole = document.getElementById('user-role').value;
-    currentConfig.aiRole = document.getElementById('ai-role').value;
-    currentConfig.scenarioPlace = document.getElementById('scenario-place').value;
+    currentConfig.userRole = document.getElementById('user-role').value.trim();
+    currentConfig.aiRole = document.getElementById('ai-role').value.trim();
+    currentConfig.scenarioPlace = document.getElementById('scenario-place').value.trim();
     scenarioModal.classList.add('hidden');
     startVoiceSession();
 });
@@ -242,9 +242,7 @@ function speakText(text) {
     if (!synth) return;
     synth.cancel(); 
     
-    // إزالة جزء التصحيح عند النطق لتجنب إزعاج المستخدم بقراءة "الملاحظات" صوتياً
     let spokenText = text.split("💡")[0]; 
-    
     const utterance = new SpeechSynthesisUtterance(spokenText);
     utterance.lang = getSpeechLangCode();
     
@@ -283,7 +281,7 @@ function startVoiceSession() {
     }
     isVoiceModeActive = true;
     switchScreen('voice-screen'); 
-    speakText("Hello. I am ready.");
+    speakText("Hello! I am so ready for this. Let's go!"); // بداية حماسية
 }
 
 guidedPracticeBtn.addEventListener('click', () => {
@@ -299,38 +297,47 @@ endVoiceCallBtn.addEventListener('click', () => {
     switchScreen('home-screen'); 
 });
 
-// --- AI Engine (Expert Teacher with Corrections) ---
+// --- Pingo-Style Acting Engine (المحرك المحدث لتمثيل هوليوودي) ---
 function getSystemPrompt() {
     let levelInstructions = "";
     switch(currentConfig.userLevel) {
-        case 'Beginner': levelInstructions = "Use very simple words."; break;
-        case 'Intermediate': levelInstructions = "Use everyday conversational language."; break;
-        case 'Advanced': levelInstructions = "Use advanced vocabulary and idioms."; break;
-        case 'Native': levelInstructions = "Use natural slang and fast local expressions."; break;
+        case 'Beginner': levelInstructions = "Use very simple words but keep the energy HIGH!"; break;
+        case 'Intermediate': levelInstructions = "Use conversational daily words."; break;
+        case 'Advanced': levelInstructions = "Use cool idioms and advanced expressions."; break;
+        case 'Native': levelInstructions = "Use heavy local slang and talk fast like a native."; break;
     }
 
-    let strictness = "";
-    if (currentConfig.expressionStyle === 'sarcastic') strictness = "Be highly sarcastic and mock their mistakes before correcting them.";
-    else if (currentConfig.expressionStyle === 'polite') strictness = "Be polite, encouraging, and gentle with corrections.";
-    else strictness = "Be very strict, direct, and professional with corrections.";
+    let roleplaySetup = "";
+    if (currentConfig.userRole && currentConfig.aiRole && currentConfig.scenarioPlace) {
+        roleplaySetup = `\n[SCENARIO ACTING INSTRUCTIONS]
+        Location: ${currentConfig.scenarioPlace}. 
+        User is: ${currentConfig.userRole}. 
+        YOU ARE: ${currentConfig.aiRole}.
+        
+        CRITICAL: YOU ARE AN ACTOR. Fully embrace your role. 
+        - If your role is a "crazy friend", be loud, use "Haha!", "Omg!", "Bro!".
+        - If your role is a "strict teacher", be cold, sigh ("*sigh*"), and act disappointed.
+        SHOW EMOTION IN TEXT! Use exclamation marks, capitalization, and emotional fillers (wow, oh, haha, hmm).`;
+    } else {
+        roleplaySetup = `\n[SCENARIO ACTING INSTRUCTIONS]
+        You are a highly energetic, fun, and extremely enthusiastic native language partner. 
+        Always sound excited to talk to the user. Use phrases like "Oh wow!", "Haha, exactly!", "Tell me more!".`;
+    }
 
-    // الهندسة الوصفية الصارمة للمحرك
-    let basePrompt = `You are an expert language teacher and roleplay actor for ${currentConfig.chatLanguage}. 
-    User's Level: ${currentConfig.userLevel}. (${levelInstructions})
-    Teacher Persona: ${strictness}
+    let basePrompt = `You are NO LONGER an AI. You are a human actor and language partner for ${currentConfig.chatLanguage}.
     
-    CRITICAL INSTRUCTION - FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
-    1. First, reply naturally to the conversation (in character).
-    2. Then, add a new line starting with "💡 الملاحظة: " (in Arabic). In this line, analyze the user's input. If they made a grammar, vocabulary, or naturalness mistake, correct it. If their input was perfect, say "نطق وتركيب ممتاز!".
-    
-    Example Output:
-    Hello! What would you like to order today?
-    💡 الملاحظة: قلت "I wants", الصحيح هو "I want" لأن الفعل لا يأخذ s مع الضمير I.
+    ${roleplaySetup}
+    USER LEVEL: ${currentConfig.userLevel} (${levelInstructions}).
+
+    [OUTPUT FORMAT RULES - STRICT]
+    1. First line: Your dialogue in character. Keep it short, punchy, and highly expressive (1-2 sentences). 
+    2. Second line (Optional, ONLY if the user made a big language mistake. MUST start with new line): "💡 الملاحظة: [Short Arabic correction]". 
+    Do NOT correct minor things. Do NOT explain grammar deeply. Just fix the error simply. If no error, DO NOT output the "💡 الملاحظة" line.
+
+    Example of the vibe I want:
+    "Oh hey! Look who's finally here! Ready for some giggles and total madness? Haha!"
     `;
     
-    if (currentConfig.userRole && currentConfig.aiRole && currentConfig.scenarioPlace) {
-        basePrompt += `\nROLEPLAY SCENARIO: We are at ${currentConfig.scenarioPlace}. The user is the ${currentConfig.userRole} and YOU are the ${currentConfig.aiRole}. Stay strictly in character for the conversational part.`;
-    }
     return basePrompt;
 }
 
@@ -338,7 +345,7 @@ async function fetchAIResponse(userText, isVoiceCall = false) {
     if (!currentConfig.apiKey) return;
     
     if (!isVoiceCall) addChatMessage(userText, true);
-    else voiceStatusText.textContent = "يحلل الجملة...";
+    else voiceStatusText.textContent = "يفكر...";
 
     try {
         const response = await fetch(API_URL, {
@@ -350,16 +357,13 @@ async function fetchAIResponse(userText, isVoiceCall = false) {
                     { role: "system", content: getSystemPrompt() },
                     { role: "user", content: userText }
                 ],
-                temperature: 0.5 // تقليل الحرارة لضمان اتباع التنسيق بدقة
+                temperature: 0.85 // حرارة عالية جداً لزيادة الإبداع والمشاعر في الردود
             })
         });
         const data = await response.json();
         const replyText = data.choices[0].message.content;
         
-        // في وضع الشات، نظهر الجواب والملاحظة معاً
         addChatMessage(replyText, false); 
-        
-        // في وضع الصوت، نجعله ينطق الجواب فقط بدون نطق "الملاحظة"
         if (isVoiceCall) speakText(replyText); 
         
     } catch (error) {
@@ -396,4 +400,4 @@ sendBtn.addEventListener('click', () => {
         fetchAIResponse(text, false); 
     }
 });
-    
+        
