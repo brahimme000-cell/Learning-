@@ -391,8 +391,50 @@ document.addEventListener('DOMContentLoaded', () => {
                         contents: [{ role: "user", parts: [{ text: userText }] }],
                         generationConfig: { temperature: 0.7 }
                     })
-                });
-                
-                const data = await response.json();
+                });const data = await response.json();
                 if (!response.ok) throw new Error(data.error?.message || "Error");
+                
+                replyText = data.candidates[0].content.parts[0].text;
+                success = true;
+                break; 
+            } catch (error) { lastError = error.message; }
+        }
+
+        if (success) {
+            if (isVoiceCall) {
+                speakText(replyText); 
+            } else {
+                addChatMessage(replyText, false); 
+            }
+        } else {
+            if (isVoiceCall) {
+                const voiceStatus = document.getElementById('voice-status-text');
+                if(voiceStatus) voiceStatus.textContent = "خطأ نهائي في الاتصال";
+                setTimeout(startListening, 3000);
+            } else {
+                addChatMessage(`⚠️ رسالة الخطأ من جوجل: ${lastError}`, false);
+            }
+        }
+    }
+
+    const chatBox = document.getElementById('chat-box');
+    document.getElementById('send-btn')?.addEventListener('click', () => {
+        const userInput = document.getElementById('user-input');
+        const text = userInput?.value.trim();
+        if (text) { 
+            if (!currentConfig.apiKey) { alert("الرجاء إدخال Gemini API Key!"); return; }
+            if (userInput) userInput.value = ''; 
+            fetchAIResponse(text, false); 
+        }
+    });
+
+    function addChatMessage(text, isUser) {
+        const div = document.createElement('div');
+        div.className = `message ${isUser ? 'user-msg' : 'bot-msg'}`;
+        div.innerHTML = `<div class="msg-content">${text}</div>`;
+        if (chatBox) { chatBox.appendChild(div); chatBox.scrollTop = chatBox.scrollHeight; }
+    }
+}); // نهاية تغليف الأكواد
+                
+                
           
