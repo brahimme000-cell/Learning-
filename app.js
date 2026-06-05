@@ -377,7 +377,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(voiceStatus) voiceStatus.textContent = "الذكاء الاصطناعي يفكر...";
         }
 
-        let modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-3.5-flash"];
+        let modelsToTry = ["gemini-1.5-flash"];
         let success = false;
         let replyText = "";
         let lastError = "";
